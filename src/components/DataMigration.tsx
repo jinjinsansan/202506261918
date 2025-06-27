@@ -438,7 +438,7 @@ const DataMigration: React.FC = () => {
                 <div className="flex items-center">
                   <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} mr-3`}></div>
                   <span className="font-jp-medium text-gray-900">
-                    Supabase接続状態: {isConnected ? '接続済み' : '未接続'}
+                    Supabase接続状態: {isConnected ? '接続済み' : '未接続'} 
                   </span>
                 </div>
                 {!isConnected && (
@@ -540,10 +540,23 @@ const DataMigration: React.FC = () => {
                       <p className="text-sm text-yellow-800 mb-2">
                         Supabaseユーザーを作成すると、データをクラウドに同期できるようになります。
                       </p> 
-                      <CreateSupabaseUserButton onUserCreated={() => {
-                        setUserExists(true);
-                        loadStats();
-                      }} />
+                      <button
+                        onClick={handleCreateUser}
+                        disabled={migrating}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-jp-medium text-sm transition-colors w-full flex items-center justify-center space-x-2"
+                      >
+                        {migrating ? (
+                          <div className="flex items-center justify-center">
+                            <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                            <span>作成中...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Database className="w-4 h-4 mr-2" />
+                            <span>Supabaseユーザーを作成</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
                 </div>
