@@ -20,7 +20,8 @@ interface MaintenanceStatus {
 
 export const useMaintenanceStatus = () => {
   const [status, setStatus] = useState<MaintenanceStatus>({
-    isMaintenanceMode: false, 
+    isMaintenanceMode: false,
+    isCounselorBypass: false,
     config: null,
     loading: true,
     error: null
@@ -32,6 +33,7 @@ export const useMaintenanceStatus = () => {
       
       // カウンセラーログイン済みかチェック
       const isCounselor = localStorage.getItem('current_counselor') !== null;
+      const counselorDuringMaintenance = localStorage.getItem('counselor_during_maintenance');
 
       // 1. 環境変数をチェック
       const envMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
@@ -49,7 +51,8 @@ export const useMaintenanceStatus = () => {
             estimatedDuration: '約30分',
             affectedFeatures: ['日記作成', '検索機能', 'データ同期'],
             isCounselorBypass: isCounselor,
-            contactInfo: 'info@namisapo.com'
+            contactInfo: 'info@namisapo.com',
+            counselorBypass: true
           },
           loading: false,
           error: null
@@ -72,6 +75,7 @@ export const useMaintenanceStatus = () => {
             setStatus(prev => ({
               isMaintenanceMode: true,
               isCounselorBypass: isCounselor,
+              counselorBypass: remoteConfig.counselorBypass !== false,
               config: remoteConfig,
               loading: false,
               error: null
@@ -92,6 +96,7 @@ export const useMaintenanceStatus = () => {
             setStatus(prev => ({
               isMaintenanceMode: true,
               isCounselorBypass: isCounselor,
+              counselorBypass: parsedConfig.counselorBypass !== false,
               config: parsedConfig,
               loading: false,
               error: null
@@ -142,7 +147,7 @@ export const useMaintenanceStatus = () => {
   const setLocalMaintenanceMode = (config: MaintenanceConfig) => {
     localStorage.setItem('maintenance_config', JSON.stringify(config));
     
-    // カウンセラーログイン状態を保存
+    // カウンセラーログイン状態を保存（メンテナンス中のバイパス用）
     if (localStorage.getItem('current_counselor')) {
       localStorage.setItem('counselor_during_maintenance', localStorage.getItem('current_counselor') || '');
     }
@@ -162,6 +167,5 @@ export const useMaintenanceStatus = () => {
     refreshStatus,
     setLocalMaintenanceMode,
     clearLocalMaintenanceMode
-    
   };
 };

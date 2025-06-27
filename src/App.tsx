@@ -48,7 +48,7 @@ const App: React.FC = () => {
   const [showCounselorLogin, setShowCounselorLogin] = useState(false);
   const [counselorCredentials, setCounselorCredentials] = useState({
     email: '',
-    password: '',
+    password: ''
   });
   const [currentCounselor, setCurrentCounselor] = useState<string | null>(null);
   const [authState, setAuthState] = useState<'none' | 'login' | 'register'>('none');
@@ -57,14 +57,14 @@ const App: React.FC = () => {
   const [dataLoading, setDataLoading] = useState(true);
   const { isMaintenanceMode, config: maintenanceConfig, loading: maintenanceLoading } = useMaintenanceStatus();
   const { isConnected, currentUser, initializeUser } = useSupabase();
-  const { isAutoSyncEnabled } = useAutoSync(); 
+  const { isAutoSyncEnabled } = useAutoSync();
 
   const [formData, setFormData] = useState({
     emotion: '',
     event: '',
     realization: '',
     selfEsteemScore: 5,
-    worthlessnessScore: 5,
+    worthlessnessScore: 5
   });
 
   const emotions = [
@@ -242,7 +242,7 @@ const App: React.FC = () => {
     // ログイン成功
     setCurrentCounselor(counselor.name);
     localStorage.setItem('current_counselor', counselor.name);
-    setIsAdmin(true); 
+    setIsAdmin(true);
     setShowCounselorLogin(false);
     setCurrentPage('admin');
     setCounselorCredentials({ email: '', password: '' });
@@ -252,7 +252,7 @@ const App: React.FC = () => {
   const handleCounselorLogout = () => {
     setCurrentCounselor(null);
     localStorage.removeItem('current_counselor');
-    setIsAdmin(false); 
+    setIsAdmin(false);
     setCurrentPage('how-to');
   };
 
@@ -907,7 +907,7 @@ const App: React.FC = () => {
   };
 
   // メンテナンスモードのチェック
-  if (maintenanceLoading) { 
+  if (maintenanceLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -919,7 +919,7 @@ const App: React.FC = () => {
   }
 
   // メンテナンスモード中でも、カウンセラーはアクセス可能
-  if (isMaintenanceMode && maintenanceConfig) { 
+  if (isMaintenanceMode && maintenanceConfig) {
     // カウンセラーログイン済みかチェック
     const isCounselor = !!currentCounselor || localStorage.getItem('current_counselor') !== null;
     
@@ -1165,7 +1165,7 @@ const App: React.FC = () => {
       {(showPrivacyConsent || currentPage === 'home' || authState !== 'none') && renderContent()}
       
       {/* カウンセラーログインモーダル */}
-      {renderCounselorLoginModal()} 
+      {renderCounselorLoginModal()}
     </div>
   );
 };
