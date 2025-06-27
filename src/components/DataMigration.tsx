@@ -295,12 +295,23 @@ const DataMigration: React.FC = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="auto" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-          <TabsList className="w-full mb-6 bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger value="auto" className="flex-1">自動同期（推奨）</TabsTrigger>
-            <TabsTrigger value="manual" className="flex-1">手動操作</TabsTrigger>
-            <TabsTrigger value="backup" className="flex-1">バックアップ</TabsTrigger>
-            <TabsTrigger value="cleanup" className="flex-1">クリーンアップ</TabsTrigger>
+        <Tabs defaultValue="auto" value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="mb-6">
+          <TabsList className="w-full grid grid-cols-2 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="auto" className="flex justify-center items-center">
+              <span>自動同期</span>
+            </TabsTrigger>
+            <TabsTrigger value="manual" className="flex justify-center items-center">
+              <span>手動操作</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsList className="w-full grid grid-cols-2 bg-gray-100 p-1 rounded-lg mt-2">
+            <TabsTrigger value="backup" className="flex justify-center items-center">
+              <span>バックアップ</span>
+            </TabsTrigger>
+            <TabsTrigger value="cleanup" className="flex justify-center items-center">
+              <span>クリーンアップ</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="auto">

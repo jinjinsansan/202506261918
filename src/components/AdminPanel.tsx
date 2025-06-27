@@ -573,42 +573,39 @@ const AdminPanel: React.FC = () => {
         </div>
 
         {/* タブナビゲーション */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="mb-6">
-          <TabsList className="w-full overflow-x-auto flex-wrap bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger value="diary" className="flex items-center space-x-1">
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">日記管理</span>
-              <span className="sm:hidden">日記</span>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="mb-6 w-full">
+          <TabsList className="w-full grid grid-cols-4 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="diary" className="flex justify-center items-center">
+              <MessageSquare className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>日記</span>
             </TabsTrigger>
-            <TabsTrigger value="search" className="flex items-center space-x-1">
-              <Search className="w-4 h-4" />
-              <span className="hidden sm:inline">高度な検索</span>
-              <span className="sm:hidden">検索</span>
+            <TabsTrigger value="search" className="flex justify-center items-center">
+              <Search className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>検索</span>
             </TabsTrigger>
-            <TabsTrigger value="counselor" className="flex items-center space-x-1">
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline">カウンセラー</span>
-              <span className="sm:hidden">カウンセラー</span>
+            <TabsTrigger value="counselor" className="flex justify-center items-center">
+              <User className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>カウンセラー</span>
             </TabsTrigger>
-            <TabsTrigger value="maintenance" className="flex items-center space-x-1">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="hidden sm:inline">メンテナンス</span>
-              <span className="sm:hidden">メンテ</span>
+            <TabsTrigger value="maintenance" className="flex justify-center items-center">
+              <AlertTriangle className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>メンテ</span>
             </TabsTrigger>
-            <TabsTrigger value="device-auth" className="flex items-center space-x-1">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">デバイス認証</span>
-              <span className="sm:hidden">認証</span>
+          </TabsList>
+          
+          {/* 2行目のタブ */}
+          <TabsList className="w-full grid grid-cols-3 bg-gray-100 p-1 rounded-lg mt-2">
+            <TabsTrigger value="device-auth" className="flex justify-center items-center">
+              <Shield className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>認証</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center space-x-1">
-              <Eye className="w-4 h-4" />
-              <span className="hidden sm:inline">セキュリティ</span>
-              <span className="sm:hidden">セキュリティ</span>
+            <TabsTrigger value="security" className="flex justify-center items-center">
+              <Eye className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>セキュリティ</span>
             </TabsTrigger>
-            <TabsTrigger value="cleanup" className="flex items-center space-x-1">
-              <Database className="w-4 h-4" />
-              <span className="hidden sm:inline">クリーンアップ</span>
-              <span className="sm:hidden">クリーンアップ</span>
+            <TabsTrigger value="cleanup" className="flex justify-center items-center">
+              <Database className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>クリーンアップ</span>
             </TabsTrigger>
           </TabsList>
 
