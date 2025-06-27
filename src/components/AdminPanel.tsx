@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Eye, X, User, Calendar, AlertTriangle, UserCheck, Edit3, Save, MessageSquare, ChevronLeft, ChevronRight, Database, Shield } from 'lucide-react';
+import { Search, Filter, Eye, X, User, Calendar, AlertTriangle, UserCheck, Edit3, Save, MessageSquare, ChevronLeft, ChevronRight, Database, Shield, Trash2 } from 'lucide-react';
 import AdvancedSearchFilter from './AdvancedSearchFilter';
 import CounselorManagement from './CounselorManagement';
 import MaintenanceController from './MaintenanceController';
 import DeviceAuthManagement from './DeviceAuthManagement';
 import SecurityDashboard from './SecurityDashboard';
-import { diaryService } from '../lib/supabase';
+import { diaryService, adminService } from '../lib/supabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import DataCleanup from './DataCleanup';
 
 interface JournalEntry {
   id: string;
@@ -43,7 +45,7 @@ const AdminPanel: React.FC = () => {
   const [editingMemo, setEditingMemo] = useState<string | null>(null);
   const [memoText, setMemoText] = useState('');
   const [memoVisibleToUser, setMemoVisibleToUser] = useState(false);
-  const [activeTab, setActiveTab] = useState<'diary' | 'search' | 'counselor' | 'maintenance' | 'device-auth' | 'security'>('diary');
+  const [activeTab, setActiveTab] = useState<'diary' | 'search' | 'counselor' | 'maintenance' | 'device-auth' | 'security' | 'cleanup'>('diary');
   const [currentCounselor, setCurrentCounselor] = useState<string | null>(null);
 
   const emotions = [
@@ -273,6 +275,35 @@ const AdminPanel: React.FC = () => {
     setEditingMemo(null);
     setMemoText('');
     setMemoVisibleToUser(false);
+  };
+
+  // 日記エントリーの削除
+  const handleDeleteEntry = async (entryId: string) => {
+    if (!window.confirm('この日記エントリーを削除しますか？この操作は元に戻せません。')) {
+      return;
+    }
+    
+    try {
+      // ローカルストレージから削除
+      const localEntries = localStorage.getItem('journalEntries');
+      if (localEntries) {
+        const parsedEntries = JSON.parse(localEntries);
+        const updatedEntries = parsedEntries.filter((entry: any) => entry.id !== entryId);
+        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      }
+      
+      // Supabaseからも削除
+      await adminService.deleteDiaryEntry(entryId);
+      
+      // 状態を更新
+      setEntries(prev => prev.filter(entry => entry.id !== entryId));
+      setFilteredEntries(prev => prev.filter(entry => entry.id !== entryId));
+      
+      alert('日記エントリーを削除しました');
+    } catch (error) {
+      console.error('日記削除エラー:', error);
+      alert('削除中にエラーが発生しました');
+    }
   };
 
   const generateCalendar = (date: Date) => {
@@ -537,38 +568,46 @@ const AdminPanel: React.FC = () => {
         <h1 className="text-2xl font-jp-bold text-gray-900 mb-6">管理画面</h1>
 
         {/* タブナビゲーション */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-2 sm:space-x-4 lg:space-x-8 overflow-x-auto">
-            {[
-              { key: 'diary', label: '日記管理', shortLabel: '日記', icon: MessageSquare },
-              { key: 'search', label: '高度な検索', shortLabel: '検索', icon: Search },
-              { key: 'counselor', label: 'カウンセラー', shortLabel: 'カウンセラー', icon: User },
-              { key: 'maintenance', label: 'メンテナンス', shortLabel: 'メンテ', icon: AlertTriangle },
-              { key: 'device-auth', label: 'デバイス認証', shortLabel: '認証', icon: Shield },
-              { key: 'security', label: 'セキュリティ', shortLabel: 'セキュリティ', icon: Eye }
-            ].map(({ key, label, shortLabel, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key as any)}
-                className={`py-2 px-2 sm:px-3 lg:px-4 border-b-2 font-jp-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
-                  activeTab === key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center space-x-1 sm:space-x-2">
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{shortLabel}</span>
-                </div>
-              </button>
-            ))}
-          </nav>
-        </div>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="mb-6">
+          <TabsList className="w-full overflow-x-auto flex-wrap bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="diary" className="flex items-center space-x-1">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">日記管理</span>
+              <span className="sm:hidden">日記</span>
+            </TabsTrigger>
+            <TabsTrigger value="search" className="flex items-center space-x-1">
+              <Search className="w-4 h-4" />
+              <span className="hidden sm:inline">高度な検索</span>
+              <span className="sm:hidden">検索</span>
+            </TabsTrigger>
+            <TabsTrigger value="counselor" className="flex items-center space-x-1">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">カウンセラー</span>
+              <span className="sm:hidden">カウンセラー</span>
+            </TabsTrigger>
+            <TabsTrigger value="maintenance" className="flex items-center space-x-1">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="hidden sm:inline">メンテナンス</span>
+              <span className="sm:hidden">メンテ</span>
+            </TabsTrigger>
+            <TabsTrigger value="device-auth" className="flex items-center space-x-1">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">デバイス認証</span>
+              <span className="sm:hidden">認証</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center space-x-1">
+              <Eye className="w-4 h-4" />
+              <span className="hidden sm:inline">セキュリティ</span>
+              <span className="sm:hidden">セキュリティ</span>
+            </TabsTrigger>
+            <TabsTrigger value="cleanup" className="flex items-center space-x-1">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">クリーンアップ</span>
+              <span className="sm:hidden">クリーンアップ</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* タブコンテンツ */}
-        {activeTab === 'diary' && (
-          <>
+          <TabsContent value="diary">
             {/* フィルター */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1008,9 +1047,9 @@ const AdminPanel: React.FC = () => {
                                 key={level.value}
                                 onClick={() => handleUpdateUrgency(entry.id, level.value)}
                                 className={`w-6 h-6 rounded-full border-2 transition-all ${
-                                  entry.urgency_level === level.value
-                                    ? level.color.replace('bg-', 'bg-').replace('text-', 'border-').replace('border-', 'border-2 border-')
-                                    : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                                  entry.urgency_level === level.value ?
+                                    level.color.replace('bg-', 'bg-').replace('text-', 'border-').replace('border-', 'border-2 border-') :
+                                    'bg-gray-100 border-gray-300 hover:bg-gray-200'
                                 }`}
                                 title={`緊急度: ${level.label}`}
                               >
@@ -1020,6 +1059,15 @@ const AdminPanel: React.FC = () => {
                           </div>
                         </div>
                       </div>
+
+                      {/* 削除ボタン */}
+                      <button
+                        onClick={() => handleDeleteEntry(entry.id)}
+                        className="text-red-600 hover:text-red-700 p-1 ml-2"
+                        title="削除"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
 
                       {entry.emotion === '無価値感' && (
                         <div className="flex space-x-6 text-sm bg-gray-50 rounded-lg p-3">
@@ -1038,13 +1086,37 @@ const AdminPanel: React.FC = () => {
                 ))}
               </div>
             )}
-          </>
-        )}
-        {activeTab === 'search' && <AdvancedSearchFilter entries={entries} onFilteredResults={setFilteredEntries} onViewEntry={setSelectedEntry} />}
-        {activeTab === 'counselor' && <CounselorManagement />}
-        {activeTab === 'maintenance' && <MaintenanceController />}
-        {activeTab === 'device-auth' && <DeviceAuthManagement />}
-        {activeTab === 'security' && <SecurityDashboard />}
+          </TabsContent>
+          
+          <TabsContent value="search">
+            <AdvancedSearchFilter 
+              entries={entries} 
+              onFilteredResults={setFilteredEntries} 
+              onViewEntry={setSelectedEntry} 
+              onDeleteEntry={handleDeleteEntry}
+            />
+          </TabsContent>
+          
+          <TabsContent value="counselor">
+            <CounselorManagement />
+          </TabsContent>
+          
+          <TabsContent value="maintenance">
+            <MaintenanceController />
+          </TabsContent>
+          
+          <TabsContent value="device-auth">
+            <DeviceAuthManagement />
+          </TabsContent>
+          
+          <TabsContent value="security">
+            <SecurityDashboard />
+          </TabsContent>
+          
+          <TabsContent value="cleanup">
+            <DataCleanup />
+          </TabsContent>
+        </Tabs>
       </div>
       {/* 詳細モーダル */}
       {renderDetailModal()}

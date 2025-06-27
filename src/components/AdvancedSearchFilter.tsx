@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, X, Calendar, User, AlertTriangle, Tag, ChevronDown, ChevronUp, RotateCcw, Download, Eye } from 'lucide-react';
+import { Search, Filter, X, Calendar, User, AlertTriangle, Tag, ChevronDown, ChevronUp, RotateCcw, Download, Eye, Edit3, Trash2 } from 'lucide-react';
 
 interface SearchFilters {
   keyword: string;
@@ -41,12 +41,14 @@ interface AdvancedSearchFilterProps {
   entries: JournalEntry[];
   onFilteredResults: (filtered: JournalEntry[]) => void;
   onViewEntry: (entry: JournalEntry) => void;
+  onDeleteEntry?: (entryId: string) => void;
 }
 
 const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
   entries,
   onFilteredResults,
-  onViewEntry
+  onViewEntry,
+  onDeleteEntry
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
@@ -670,6 +672,15 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                     >
                       <Eye className="w-4 h-4" />
                     </button>
+                    {onDeleteEntry && (
+                      <button 
+                        onClick={() => onDeleteEntry(entry.id)}
+                        className="text-red-600 hover:text-red-700 p-1"
+                        title="削除"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -691,8 +702,8 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                 {entry.counselor_memo && (
                   <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mb-3">
                     <h4 className="font-jp-semibold text-blue-900 mb-1 text-sm">カウンセラーメモ</h4>
-                    <p className="text-blue-800 text-sm font-jp-normal leading-relaxed">
-                      {entry.counselor_memo.length > 150 ? `${entry.counselor_memo.substring(0, 150)}...` : entry.counselor_memo}
+                    <p className="text-blue-800 text-sm font-jp-normal leading-relaxed whitespace-pre-line break-words">
+                      {entry.counselor_memo.length > 200 ? `${entry.counselor_memo.substring(0, 200)}...` : entry.counselor_memo}
                     </p>
                   </div>
                 )}
