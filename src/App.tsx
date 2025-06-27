@@ -16,7 +16,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import { useSupabase } from './hooks/useSupabase';
 import { useAutoSync } from './hooks/useAutoSync';
 import { isAuthenticated, getCurrentUser, logoutUser, logSecurityEvent } from './lib/deviceAuth';
-import CreateSupabaseUser from './components/CreateSupabaseUser';
+import CreateSupabaseUserButton from './CreateSupabaseUserButton';
 import UserDataManagement from './components/UserDataManagement';
 import DeviceAuthLogin from './components/DeviceAuthLogin';
 import DeviceAuthRegistration from './components/DeviceAuthRegistration';
@@ -904,7 +904,7 @@ const App: React.FC = () => {
             {/* Supabaseユーザー作成ボタン */}
             {!currentUser && isConnected && (
               <div className="mb-4">
-                <CreateSupabaseUser />
+                <CreateSupabaseUserButton />
               </div>
             )}
             
