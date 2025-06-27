@@ -557,11 +557,11 @@ const App: React.FC = () => {
           {/* メンテナンスモード警告（カウンセラーのみ表示） */}
           {isMaintenanceMode && maintenanceConfig && currentCounselor && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 animate-pulse">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-                <span className="text-blue-700 font-jp-medium text-sm">
-                  {lineUsername}さん
-                </span>
+              <div className="flex items-start space-x-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-red-700 font-jp-medium text-sm">
+                    <span className="font-jp-bold">{lineUsername}さん</span>
                     カウンセラー権限でバイパスしています。一般ユーザーはアクセスできません。
                   </p>
                 </div>
