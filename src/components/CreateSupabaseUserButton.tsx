@@ -65,7 +65,16 @@ const CreateSupabaseUserButton: React.FC<CreateSupabaseUserButtonProps> = ({
   };
 
   return (
-    <div className={`${className}`}>
+    <div className={`bg-white rounded-lg p-4 border border-blue-200 shadow-md ${className}`}>
+      <div className="flex items-center space-x-3 mb-4">
+        <Database className="w-6 h-6 text-blue-600" />
+        <h3 className="font-jp-bold text-gray-900">Supabaseユーザー作成</h3>
+      </div>
+      
+      <p className="text-sm text-gray-700 mb-4">
+        Supabaseユーザーを作成すると、データをクラウドに同期できるようになります。
+      </p>
+      
       {error && (
         <div className="bg-red-50 rounded-lg p-3 border border-red-200 mb-4">
           <div className="flex items-center space-x-2">
@@ -101,6 +110,10 @@ const CreateSupabaseUserButton: React.FC<CreateSupabaseUserButtonProps> = ({
           </>
         )}
       </button>
+      
+      <p className="text-xs text-gray-500 mt-3">
+        ※ ユーザー作成後、自動的にページがリロードされます
+      </p>
     </div>
   );
 };
