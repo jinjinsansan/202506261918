@@ -18,7 +18,7 @@
 # プロジェクトディレクトリに移動
 cd /path/to/your/project
 
-# Git初期化
+# Gitを初期化
 git init
 
 # .gitignoreファイルを作成
