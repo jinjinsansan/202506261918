@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, Filter, X, Eye, Edit3, Trash2, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCurrentUser } from '../lib/deviceAuth';
+import { highlightText } from '../lib/utils';
 
 interface JournalEntry {
   id: string;
@@ -212,20 +213,34 @@ const DiarySearchPage: React.FC = () => {
     return colorMap[emotion] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const highlightText = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim() || searchType !== 'keyword') return text;
+  const renderHighlightedText = (text: string, searchTerm: string) => {
+    if (!searchTerm.trim() || searchType !== 'keyword') {
+      return <span className="whitespace-pre-line">{text}</span>;
+    }
     
-    const regex = new RegExp(`(${searchTerm})`, 'gi');
-    const parts = text.split(regex);
+    // Use the utility function to get highlighted text with ** markers
+    const highlightedText = highlightText(text, searchTerm);
     
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 px-1 rounded">
-          {part}
-        </mark>
-      ) : part
+    // Split by the ** markers
+    const parts = highlightedText.split(/\*\*/);
+    
+    // Render with proper highlighting
+    return (
+      <span className="whitespace-pre-line">
+        {parts.map((part, index) => {
+          // Every odd index is a highlighted part
+          return index % 2 === 1 ? (
+            <mark key={index} className="bg-yellow-200 px-1 rounded">
+              {part}
+            </mark>
+          ) : (
+            part
+          );
+        })}
+      </span>
     );
   };
+    
 
   const generateCalendar = (date: Date) => {
     const year = date.getFullYear();
@@ -803,13 +818,13 @@ const DiarySearchPage: React.FC = () => {
                 <div>
                   <h4 className="font-jp-semibold text-gray-700 mb-2">出来事</h4>
                   <p className="text-gray-600 text-sm font-jp-normal leading-relaxed break-words whitespace-pre-line">
-                    {highlightText(entry.event, searchValue)}
+                    {renderHighlightedText(entry.event, searchValue)}
                   </p>
                 </div>
                 <div>
                   <h4 className="font-jp-semibold text-gray-700 mb-2">気づき</h4>
                   <p className="text-gray-600 text-sm font-jp-normal leading-relaxed break-words whitespace-pre-line">
-                    {highlightText(entry.realization, searchValue)}
+                    {renderHighlightedText(entry.realization, searchValue)}
                   </p>
                 </div>
               </div>

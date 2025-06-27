@@ -62,19 +62,12 @@ export function getEmotionEmoji(emotion: string): string {
  * @param searchTerm - Search term to highlight
  * @returns React elements with highlighted text
  */
-export function highlightText(text: string, searchTerm: string) {
+export function highlightText(text: string, searchTerm: string): string {
   if (!searchTerm.trim()) return text;
   
-  const regex = new RegExp(`(${searchTerm})`, 'gi');
-  const parts = text.split(regex);
-  
-  return parts.map((part, index) => 
-    regex.test(part) ? (
-      <mark key={index} className="bg-yellow-200 px-1 rounded">
-        {part}
-      </mark>
-    ) : part
-  );
+  // Use a simple string replacement instead of JSX
+  const regex = new RegExp(searchTerm, 'gi');
+  return text.replace(regex, match => `**${match}**`);
 }
 
 /**
