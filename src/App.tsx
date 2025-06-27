@@ -16,6 +16,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import { useSupabase } from './hooks/useSupabase';
 import { useAutoSync } from './hooks/useAutoSync';
 import { isAuthenticated, getCurrentUser, logoutUser, logSecurityEvent } from './lib/deviceAuth';
+import CreateSupabaseUser from './components/CreateSupabaseUser';
 import UserDataManagement from './components/UserDataManagement';
 import DeviceAuthLogin from './components/DeviceAuthLogin';
 import DeviceAuthRegistration from './components/DeviceAuthRegistration';
@@ -899,6 +900,14 @@ const App: React.FC = () => {
                 </div>
               )}
             </div>
+            
+            {/* Supabaseユーザー作成ボタン */}
+            {!currentUser && isConnected && (
+              <div className="mb-4">
+                <CreateSupabaseUser />
+              </div>
+            )}
+            
           </div>
         );
       default:
@@ -1138,9 +1147,9 @@ const App: React.FC = () => {
                   }`}>
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                     <span>Supabase: {isConnected ? '接続済み' : 'ローカルモード'}</span>
-                    {currentUser && (
-                      <span className="text-xs">({currentUser.line_username})</span>
-                    )}
+                {currentUser && (
+                  <span className="text-xs">({currentUser.line_username})</span>
+                )}
                   </div>
                   {currentCounselor && (
                     <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-jp-medium bg-blue-100 text-blue-800 border border-blue-200">
@@ -1156,6 +1165,12 @@ const App: React.FC = () => {
                   )}
                 </div>
               </div>
+              {!currentUser && isConnected && (
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-jp-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>Supabaseユーザーが未作成</span>
+                </div>
+              )}
             )}
             {renderContent()}
           </main>

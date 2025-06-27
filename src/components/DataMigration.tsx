@@ -4,6 +4,7 @@ import { useSupabase } from '../hooks/useSupabase';
 import { syncService, userService, consentService, diaryService, supabase, adminService } from '../lib/supabase';
 import AutoSyncSettings from './AutoSyncSettings';
 import DataBackupRecovery from './DataBackupRecovery';
+import CreateSupabaseUser from './CreateSupabaseUser';
 import DataCleanup from './DataCleanup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
@@ -538,21 +539,11 @@ const DataMigration: React.FC = () => {
                     <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                       <p className="text-sm text-yellow-800 mb-2">
                         Supabaseユーザーを作成すると、データをクラウドに同期できるようになります。
-                      </p>
-                      <button
-                        onClick={handleCreateSupabaseUser}
-                        disabled={creatingUser}
-                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-jp-medium text-sm transition-colors w-full"
-                      >
-                        {creatingUser ? (
-                          <div className="flex items-center justify-center">
-                            <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                            <span>作成中...</span>
-                          </div>
-                        ) : (
-                          'Supabaseユーザーを作成する'
-                        )}
-                      </button>
+                      </p> 
+                      <CreateSupabaseUser onUserCreated={() => {
+                        setUserExists(true);
+                        loadStats();
+                      }} />
                     </div>
                   )}
                 </div>
