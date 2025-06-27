@@ -1169,9 +1169,9 @@ const App: React.FC = () => {
             {isAdmin && !currentUser && isConnected && (
               <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-jp-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
                 <AlertTriangle className="w-3 h-3" />
-                <span>Supabaseユーザーが未作成</span>
+                <span>Supabaseユーザーが未作成</span> 
               </div>
-            )}
+            )} 
             {renderContent()}
           </main>
         </>
