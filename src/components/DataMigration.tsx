@@ -652,7 +652,6 @@ const DataMigration: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
           </TabsContent>
         </Tabs>
         </div>
