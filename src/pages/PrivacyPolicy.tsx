@@ -22,24 +22,13 @@ const PrivacyPolicy: React.FC = () => {
   return (
     <div className="w-full space-y-6 px-2">
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <Shield className="w-8 h-8 text-blue-600" />
-            </div>
-            <h1 className="text-2xl font-jp-bold text-gray-900 mb-2">
-              プライバシーポリシー
-            </h1>
-          </div>
-          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-blue-200 h-fit">
-            ユーザーモード
-          </div>
-        </div>
-        
-        <div className="text-center mb-4">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
             <Shield className="w-8 h-8 text-blue-600" />
           </div>
+          <h1 className="text-2xl font-jp-bold text-gray-900 mb-2">
+            プライバシーポリシー
+          </h1>
           <p className="text-gray-600 font-jp-normal">
             本サービス「かんじょうにっき」のプライバシーに関する重要事項
           </p>

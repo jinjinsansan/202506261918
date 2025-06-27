@@ -16,7 +16,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import { useSupabase } from './hooks/useSupabase';
 import { useAutoSync } from './hooks/useAutoSync';
 import { isAuthenticated, getCurrentUser, logoutUser, logSecurityEvent } from './lib/deviceAuth';
-import ModeToggle from './components/ModeToggle';
 import UserDataManagement from './components/UserDataManagement';
 import DeviceAuthLogin from './components/DeviceAuthLogin';
 import DeviceAuthRegistration from './components/DeviceAuthRegistration';
@@ -54,7 +53,6 @@ const App: React.FC = () => {
   const [currentCounselor, setCurrentCounselor] = useState<string | null>(null);
   const [authState, setAuthState] = useState<'none' | 'login' | 'register'>('none');
   const [showUserDataManagement, setShowUserDataManagement] = useState(false);
-  const [isAdminMode, setIsAdminMode] = useState(false);
 
   const [dataLoading, setDataLoading] = useState(true);
   const { isMaintenanceMode, config: maintenanceConfig, loading: maintenanceLoading } = useMaintenanceStatus();
@@ -212,26 +210,6 @@ const App: React.FC = () => {
     }
   };
 
-  // モード切り替え処理
-  const handleModeToggle = (adminMode: boolean) => {
-    setIsAdminMode(adminMode);
-    
-    if (adminMode) {
-      // カウンセラーモードに切り替え時、ログイン画面を表示
-      if (!currentCounselor) {
-        setShowCounselorLogin(true);
-      } else {
-        // 既にカウンセラーログイン済みの場合は管理画面へ
-        setCurrentPage('admin');
-      }
-    } else {
-      // ユーザーモードに切り替え時、使い方ページへ
-      if (currentPage === 'admin' || currentPage === 'data-migration') {
-        setCurrentPage('how-to');
-      }
-    }
-  };
-
   // カウンセラーアカウント情報
   const counselorAccounts = [
     { name: '心理カウンセラー仁', email: 'jin@namisapo.com' },
@@ -265,7 +243,6 @@ const App: React.FC = () => {
     setCurrentCounselor(counselor.name);
     localStorage.setItem('current_counselor', counselor.name);
     setIsAdmin(true); 
-    setIsAdminMode(true);
     setShowCounselorLogin(false);
     setCurrentPage('admin');
     setCounselorCredentials({ email: '', password: '' });
@@ -276,7 +253,6 @@ const App: React.FC = () => {
     setCurrentCounselor(null);
     localStorage.removeItem('current_counselor');
     setIsAdmin(false); 
-    setIsAdminMode(false);
     setCurrentPage('how-to');
   };
 
@@ -1190,11 +1166,6 @@ const App: React.FC = () => {
       
       {/* カウンセラーログインモーダル */}
       {renderCounselorLoginModal()} 
-      
-      {/* モード切り替えトグル */}
-      {!showPrivacyConsent && currentPage !== 'home' && authState === 'none' && (
-        <ModeToggle isAdminMode={isAdminMode} onToggle={handleModeToggle} />
-      )}
     </div>
   );
 };

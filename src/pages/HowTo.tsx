@@ -5,14 +5,9 @@ const HowTo: React.FC = () => {
   return (
     <div className="w-full space-y-6 px-2">
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-jp-bold text-gray-900 text-center">
-            かんじょうにっきの使い方
-          </h1>
-          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-blue-200">
-            ユーザーモード
-          </div>
-        </div>
+        <h1 className="text-2xl font-jp-bold text-gray-900 text-center mb-8">
+          かんじょうにっきの使い方
+        </h1>
         
         <div className="text-center mb-8">
           <p className="text-lg font-jp-medium text-gray-800">
