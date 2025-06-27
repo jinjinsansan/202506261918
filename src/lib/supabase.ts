@@ -622,6 +622,87 @@ export const consentService = {
   }
 };
 
+// 管理者用サービス
+export const adminService = {
+  // 全ユーザーの統計情報を取得
+  async getUserStats(): Promise<{ total: number; today: number; thisWeek: number } | null> {
+    if (!supabase) return null;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      const [totalResult, todayResult, weekResult] = await Promise.all([
+        supabase.from('users').select('id', { count: 'exact' }),
+        supabase.from('users').select('id', { count: 'exact' }).gte('created_at', today),
+        supabase.from('users').select('id', { count: 'exact' }).gte('created_at', weekAgo)
+      ]);
+      
+      return {
+        total: totalResult.count || 0,
+        today: todayResult.count || 0,
+        thisWeek: weekResult.count || 0
+      };
+    } catch (error) {
+      console.error('管理者用ユーザー統計取得エラー:', error);
+      return null;
+    }
+  },
+  
+  // 全ユーザーの日記統計情報を取得
+  async getDiaryStats(): Promise<{ total: number; today: number; thisWeek: number; byEmotion: Record<string, number> } | null> {
+    if (!supabase) return null;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const [totalResult, todayResult, weekResult, emotionResult] = await Promise.all([
+        supabase.from('diary_entries').select('id', { count: 'exact' }),
+        supabase.from('diary_entries').select('id', { count: 'exact' }).gte('date', today),
+        supabase.from('diary_entries').select('id', { count: 'exact' }).gte('date', weekAgo),
+        supabase.from('diary_entries').select('emotion')
+      ]);
+      
+      // 感情別集計
+      const byEmotion: Record<string, number> = {};
+      if (emotionResult.data) {
+        emotionResult.data.forEach(entry => {
+          byEmotion[entry.emotion] = (byEmotion[entry.emotion] || 0) + 1;
+        });
+      }
+      
+      return {
+        total: totalResult.count || 0,
+        today: todayResult.count || 0,
+        thisWeek: weekResult.count || 0,
+        byEmotion
+      };
+    } catch (error) {
+      console.error('管理者用日記統計取得エラー:', error);
+      return null;
+    }
+  },
+  
+  // 日記エントリーを削除
+  async deleteDiaryEntry(entryId: string): Promise<boolean> {
+    if (!supabase) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('diary_entries')
+        .delete()
+        .eq('id', entryId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('日記削除エラー:', error);
+      return false;
+    }
+  }
+};
+
 // データ同期ユーティリティ
 export const syncService = {
   // ローカルストレージからSupabaseへデータを移行
@@ -698,6 +779,26 @@ export const syncService = {
       return true;
     } catch (error) {
       console.error('同期エラー:', error);
+      return false;
+    }
+  },
+  
+  // 管理者モード: 特定のユーザーのデータを削除
+  async deleteUserData(userId: string): Promise<boolean> {
+    if (!supabase) return false;
+    
+    try {
+      // 日記エントリーを削除
+      const { error } = await supabase
+        .from('diary_entries')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error('ユーザーデータ削除エラー:', error);
       return false;
     }
   },

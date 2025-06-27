@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Database, Upload, Download, RefreshCw, CheckCircle, AlertTriangle, Users, Info, Settings, BarChart3, TrendingUp, Shield } from 'lucide-react';
 import { useSupabase } from '../hooks/useSupabase';
-import { syncService, userService, consentService, diaryService, supabase } from '../lib/supabase';
+import { syncService, userService, consentService, diaryService, supabase, adminService } from '../lib/supabase';
 import AutoSyncSettings from './AutoSyncSettings';
 import DataBackupRecovery from './DataBackupRecovery';
+import DataCleanup from './DataCleanup';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 const DataMigration: React.FC = () => {
   const { isConnected, currentUser, loading, error, retryConnection } = useSupabase();
@@ -15,7 +17,7 @@ const DataMigration: React.FC = () => {
   const [localConsentCount, setLocalConsentCount] = useState(0);
   const [supabaseConsentCount, setSupabaseConsentCount] = useState(0);
   const [userExists, setUserExists] = useState(false);
-  const [activeTab, setActiveTab] = useState<'manual' | 'auto' | 'backup'>('auto');
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'backup' | 'cleanup'>('auto');
   const [stats, setStats] = useState<{
     userStats: { total: number; today: number; thisWeek: number } | null;
     diaryStats: { total: number; today: number; thisWeek: number; byEmotion: Record<string, number> } | null;
@@ -33,13 +35,29 @@ const DataMigration: React.FC = () => {
   }, [isConnected, currentUser]);
 
   const loadStats = async () => {
-    if (!isConnected) return;
+    if (!isConnected || !currentUser) return;
     
     try {
-      const [userStats, diaryStats] = await Promise.all([
-        userService.getUserStats(),
-        diaryService.getDiaryStats()
-      ]);
+      let userStats, diaryStats;
+      
+      // Check if current user is an admin
+      const isAdmin = currentUser.line_username === 'admin' || 
+                      currentUser.line_username.includes('admin') ||
+                      localStorage.getItem('current_counselor') !== null;
+      
+      if (isAdmin) {
+        // Admin can see all stats
+        [userStats, diaryStats] = await Promise.all([
+          adminService.getUserStats(),
+          adminService.getDiaryStats()
+        ]);
+      } else {
+        // Regular user only sees their own stats
+        [userStats, diaryStats] = await Promise.all([
+          userService.getUserStats(),
+          diaryService.getDiaryStats()
+        ]);
+      }
       
       setStats({ userStats, diaryStats });
     } catch (error) {
@@ -269,52 +287,30 @@ const DataMigration: React.FC = () => {
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center space-x-3 mb-6">
           <Database className="w-8 h-8 text-blue-600" /> 
-          <h1 className="text-2xl font-jp-bold text-gray-900">データ管理</h1>
+          <h1 className="text-2xl font-jp-bold text-gray-900">データ管理・クリーンアップ</h1>
         </div>
 
-        {/* タブナビゲーション */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('auto')}
-              className={`py-2 px-1 border-b-2 font-jp-medium text-sm ${
-                activeTab === 'auto'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              自動同期（推奨）
-            </button>
-            <button
-              onClick={() => setActiveTab('manual')}
-              className={`py-2 px-1 border-b-2 font-jp-medium text-sm ${
-                activeTab === 'manual'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              手動操作
-            </button>
-            <button
-              onClick={() => setActiveTab('backup')}
-              className={`py-2 px-1 border-b-2 font-jp-medium text-sm ${
-                activeTab === 'backup'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              バックアップ
-            </button>
-          </nav>
-        </div>
+        <Tabs defaultValue="auto" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+          <TabsList className="w-full mb-6 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="auto" className="flex-1">自動同期（推奨）</TabsTrigger>
+            <TabsTrigger value="manual" className="flex-1">手動操作</TabsTrigger>
+            <TabsTrigger value="backup" className="flex-1">バックアップ</TabsTrigger>
+            <TabsTrigger value="cleanup" className="flex-1">クリーンアップ</TabsTrigger>
+          </TabsList>
 
-        {/* タブコンテンツ */}
-        {activeTab === 'auto' ? (
-          <AutoSyncSettings />
-        ) : activeTab === 'backup' ? (
-          <DataBackupRecovery />
-        ) : (
-          <div className="space-y-6">
+          <TabsContent value="auto">
+            <AutoSyncSettings />
+          </TabsContent>
+          
+          <TabsContent value="backup">
+            <DataBackupRecovery />
+          </TabsContent>
+          
+          <TabsContent value="cleanup">
+            <DataCleanup />
+          </TabsContent>
+          
+          <TabsContent value="manual" className="space-y-6">
             {/* 本番環境統計（Supabase接続時のみ表示） */}
             {isConnected && (stats.userStats || stats.diaryStats) && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
@@ -657,7 +653,8 @@ const DataMigration: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+          </TabsContent>
+        </Tabs>
         </div>
     </div>
   );
