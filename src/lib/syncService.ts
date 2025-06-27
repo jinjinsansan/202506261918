@@ -5,8 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 export const syncService = {
   // ローカルストレージからSupabaseへデータを移行
   async migrateLocalData(userId: string): Promise<boolean> {
-    if (!supabase) return false;
-    
     try {
       // ローカルストレージから日記データを取得
       const localEntries = localStorage.getItem('journalEntries');
@@ -15,33 +13,54 @@ export const syncService = {
       const entries = JSON.parse(localEntries);
       if (entries.length === 0) return true;
       
+      // サービスロールキーを使用してデータを保存
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error('Supabase設定が不足しています');
+      }
+      
+      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+      
       // バッチ処理で効率的に保存（本番環境対応）
-      const batchSize = 50; // 一度に50件ずつ処理
+      const batchSize = 20; // 一度に20件ずつ処理
       
       for (const entry of entries) {
         try {
           // 既存エントリーの重複チェック
-          const { data: existing } = await supabase
+          const { data: existing, error: checkError } = await supabaseAdmin
             .from('diary_entries')
             .select('id')
             .eq('user_id', userId)
             .eq('date', entry.date)
             .eq('emotion', entry.emotion)
-            .single();
+            .maybeSingle();
+            
+          if (checkError) {
+            console.warn('エントリーチェックエラー:', checkError);
+            continue;
+          }
           
           if (!existing) {
-            await this.createDiaryEntry({
-              user_id: userId,
-              date: entry.date,
-              emotion: entry.emotion,
-              event: entry.event,
-              realization: entry.realization,
-              self_esteem_score: entry.selfEsteemScore || 50,
-              worthlessness_score: entry.worthlessnessScore || 50
-            });
+            const { error: insertError } = await supabaseAdmin
+              .from('diary_entries')
+              .insert([{
+                user_id: userId,
+                date: entry.date,
+                emotion: entry.emotion,
+                event: entry.event,
+                realization: entry.realization,
+                self_esteem_score: entry.selfEsteemScore || 50,
+                worthlessness_score: entry.worthlessnessScore || 50
+              }]);
+              
+            if (insertError) {
+              console.warn('エントリー保存エラー:', insertError);
+            }
           }
         } catch (entryError) {
-          console.warn('エントリー移行スキップ:', entry.id, entryError);
+          console.warn('エントリー処理エラー:', entryError);
           // 個別エラーは警告として処理し、全体の処理は継続
         }
       }
@@ -56,8 +75,6 @@ export const syncService = {
 
   // Supabaseからローカルストレージにデータを同期
   async syncToLocal(userId: string): Promise<boolean> {
-    if (!supabase) return false;
-    
     try {
       // サービスロールキーを使用してデータを取得
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -73,7 +90,7 @@ export const syncService = {
         .from('diary_entries')
         .select('*')
         .eq('user_id', userId);
-      
+        
       if (error) {
         throw error;
       }
@@ -106,26 +123,6 @@ export const syncService = {
     }
   },
   
-  // 管理者モード: 特定のユーザーのデータを削除
-  async deleteUserData(userId: string): Promise<boolean> {
-    if (!supabase) return false;
-    
-    try {
-      // 日記エントリーを削除
-      const { error } = await supabase
-        .from('diary_entries')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-      
-      return true;
-    } catch (error) {
-      console.error('ユーザーデータ削除エラー:', error);
-      return false;
-    }
-  },
-
   // 同意履歴をSupabaseに同期
   async syncConsentHistories(): Promise<boolean> {
     try {
@@ -298,25 +295,6 @@ export const syncService = {
     } catch (error) {
       console.error('大量データ移行エラー:', error);
       return false;
-    }
-  },
-  
-  // 日記エントリーを作成
-  async createDiaryEntry(entry: any): Promise<any> {
-    if (!supabase) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('diary_entries')
-        .insert([entry])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('日記作成エラー:', error);
-      return null;
     }
   }
 };
