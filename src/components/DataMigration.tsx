@@ -7,6 +7,7 @@ import AutoSyncSettings from './AutoSyncSettings';
 import DataBackupRecovery from './DataBackupRecovery';
 import DataCleanup from './DataCleanup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { createClient } from '@supabase/supabase-js';
 
 const DataMigration: React.FC = () => {
   const { isConnected, currentUser, loading, error, retryConnection } = useSupabase();
@@ -164,8 +165,8 @@ const DataMigration: React.FC = () => {
   };
 
   const handleMigrateToSupabase = async () => {
-    if (!currentUser) {
-      alert('ユーザーが設定されていません。');
+    if (!isConnected) {
+      alert('Supabaseに接続されていません。');
       return;
     }
 
@@ -174,9 +175,49 @@ const DataMigration: React.FC = () => {
     setMigrationProgress(0);
 
     try {
+      // ユーザーIDの取得
+      let userId = currentUser?.id;
+      
+      // ユーザーIDがない場合は、ユーザー名からユーザーを取得
+      if (!userId) {
+        const lineUsername = localStorage.getItem('line-username');
+        if (!lineUsername) {
+          throw new Error('ユーザー名が設定されていません');
+        }
+        
+        // サービスロールキーを使用してユーザーを取得
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+        
+        if (!supabaseUrl || !serviceRoleKey) {
+          throw new Error('Supabase設定が不足しています');
+        }
+        
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+        const { data: user, error } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('line_username', lineUsername)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (!user) {
+          throw new Error('ユーザーが見つかりません。先にユーザーを作成してください。');
+        }
+        
+        userId = user.id;
+      }
+      
+      if (!userId) {
+        throw new Error('ユーザーIDが取得できませんでした');
+      }
+      
       // 大量データ対応の移行処理
       const success = await syncService.bulkMigrateLocalData(
-        currentUser.id,
+        userId,
         (progress) => setMigrationProgress(progress)
       );
       
@@ -197,8 +238,8 @@ const DataMigration: React.FC = () => {
   };
 
   const handleMigrateConsentsToSupabase = async () => {
-    if (!currentUser) {
-      alert('ユーザーが設定されていません。');
+    if (!isConnected) {
+      alert('Supabaseに接続されていません。');
       return;
     }
 
@@ -223,8 +264,8 @@ const DataMigration: React.FC = () => {
   };
 
   const handleSyncFromSupabase = async () => {
-    if (!currentUser) {
-      alert('ユーザーが設定されていません。');
+    if (!isConnected) {
+      alert('Supabaseに接続されていません。');
       return;
     }
 
@@ -232,7 +273,47 @@ const DataMigration: React.FC = () => {
     setMigrationStatus('Supabaseからローカルに同期中...');
 
     try {
-      const success = await syncService.syncToLocal(currentUser.id);
+      // ユーザーIDの取得
+      let userId = currentUser?.id;
+      
+      // ユーザーIDがない場合は、ユーザー名からユーザーを取得
+      if (!userId) {
+        const lineUsername = localStorage.getItem('line-username');
+        if (!lineUsername) {
+          throw new Error('ユーザー名が設定されていません');
+        }
+        
+        // サービスロールキーを使用してユーザーを取得
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+        
+        if (!supabaseUrl || !serviceRoleKey) {
+          throw new Error('Supabase設定が不足しています');
+        }
+        
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+        const { data: user, error } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('line_username', lineUsername)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (!user) {
+          throw new Error('ユーザーが見つかりません。先にユーザーを作成してください。');
+        }
+        
+        userId = user.id;
+      }
+      
+      if (!userId) {
+        throw new Error('ユーザーIDが取得できませんでした');
+      }
+      
+      const success = await syncService.syncToLocal(userId);
       
       if (success) {
         setMigrationStatus('同期が完了しました！');
@@ -250,8 +331,8 @@ const DataMigration: React.FC = () => {
   };
 
   const handleSyncConsentsFromSupabase = async () => {
-    if (!currentUser) {
-      alert('ユーザーが設定されていません。');
+    if (!isConnected) {
+      alert('Supabaseに接続されていません。');
       return;
     }
 
@@ -619,7 +700,7 @@ const DataMigration: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <button
                   onClick={handleMigrateToSupabase}
-                  disabled={migrating || !isConnected || (!currentUser && !userExists) || localDataCount === 0}
+                  disabled={migrating || !isConnected || localDataCount === 0}
                   className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
                 >
                   {migrating ? (
@@ -632,7 +713,7 @@ const DataMigration: React.FC = () => {
 
                 <button
                   onClick={handleSyncFromSupabase}
-                  disabled={syncing || !isConnected || (!currentUser && !userExists)}
+                  disabled={syncing || !isConnected}
                   className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
                 >
                   {syncing ? (
@@ -648,7 +729,7 @@ const DataMigration: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   onClick={handleMigrateConsentsToSupabase}
-                  disabled={migrating || !isConnected || (!currentUser && !userExists) || localConsentCount === 0}
+                  disabled={migrating || !isConnected || localConsentCount === 0}
                   className="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
                 >
                   {migrating ? (
@@ -661,7 +742,7 @@ const DataMigration: React.FC = () => {
 
                 <button
                   onClick={handleSyncConsentsFromSupabase}
-                  disabled={syncing || !isConnected || (!currentUser && !userExists)}
+                  disabled={syncing || !isConnected}
                   className="flex items-center justify-center space-x-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
                 >
                   {syncing ? (

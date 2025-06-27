@@ -745,6 +745,10 @@ export const syncService = {
   // ローカルストレージからSupabaseへデータを移行
   async migrateLocalData(userId: string): Promise<boolean> {
     if (!supabase) return false;
+
+    // サービスロールキーの取得
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAdmin = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : supabase;
     
     try {
       // ローカルストレージから日記データを取得
@@ -769,7 +773,7 @@ export const syncService = {
             .single();
           
           if (!existing) {
-            await diaryService.createEntry({
+            await supabaseAdmin.from('diary_entries').insert({
               user_id: userId,
               date: entry.date,
               emotion: entry.emotion,
@@ -796,9 +800,21 @@ export const syncService = {
   // Supabaseからローカルストレージにデータを同期
   async syncToLocal(userId: string): Promise<boolean> {
     if (!supabase) return false;
+
+    // サービスロールキーの取得
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAdmin = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : supabase;
     
     try {
-      const entries = await diaryService.getUserEntries(userId);
+      // サービスロールを使用してデータを取得
+      const { data: entries, error } = await supabaseAdmin
+        .from('diary_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      if (!entries) return false;
       
       // ローカルストレージ形式に変換
       const localFormat = entries.map(entry => ({
@@ -843,6 +859,10 @@ export const syncService = {
   // 同意履歴をSupabaseに同期
   async syncConsentHistories(): Promise<boolean> {
     if (!supabase) return false;
+
+    // サービスロールキーの取得
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAdmin = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : supabase;
     
     try {
       // ローカルストレージから同意履歴を取得
@@ -855,7 +875,7 @@ export const syncService = {
       for (const history of histories) {
         // 既存の記録をチェック
         const existing = await consentService.getConsentHistoryByUsername(history.line_username);
-        if (!existing) {
+        if (!existing && supabaseAdmin) {
           await consentService.createConsentRecord({
             line_username: history.line_username,
             consent_given: history.consent_given,
@@ -877,9 +897,20 @@ export const syncService = {
   // Supabaseから同意履歴をローカルに同期
   async syncConsentHistoriesToLocal(): Promise<boolean> {
     if (!supabase) return false;
+
+    // サービスロールキーの取得
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAdmin = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : supabase;
     
     try {
-      const histories = await consentService.getAllConsentHistories();
+      // サービスロールを使用してデータを取得
+      const { data: histories, error } = await supabaseAdmin
+        .from('consent_histories')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      if (!histories) return false;
       
       // ローカルストレージ形式に変換
       const localFormat = histories.map(history => ({
@@ -903,6 +934,10 @@ export const syncService = {
   // 本番環境用：大量データの効率的な同期
   async bulkMigrateLocalData(userId: string, progressCallback?: (progress: number) => void): Promise<boolean> {
     if (!supabase) return false;
+
+    // サービスロールキーの取得
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAdmin = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : supabase;
     
     try {
       const localEntries = localStorage.getItem('journalEntries');
@@ -928,7 +963,7 @@ export const syncService = {
           worthlessness_score: entry.worthlessnessScore || 50
         }));
         
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('diary_entries')
           .upsert(insertData, { 
             onConflict: 'user_id,date,emotion',
