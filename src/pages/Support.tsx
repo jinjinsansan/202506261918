@@ -42,7 +42,7 @@ const Support: React.FC = () => {
                   </div>
                   <div className="flex items-start space-x-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-3 flex-shrink-0"></div>
-                    <p className="text-gray-700 font-jp-normal text-sm sm:text-base">復活の呪文によるデータ復元</p>
+                    <p className="text-gray-700 font-jp-normal text-sm sm:text-base">データバックアップ・復元機能</p>
                   </div>
                 </div>
                 <div className="bg-white rounded-lg p-4 border border-purple-200 text-center">
