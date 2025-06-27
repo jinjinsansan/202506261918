@@ -20,7 +20,7 @@ interface MaintenanceStatus {
 
 export const useMaintenanceStatus = () => {
   const [status, setStatus] = useState<MaintenanceStatus>({
-    isMaintenanceMode: false,
+    isMaintenanceMode: false, 
     config: null,
     loading: true,
     error: null
@@ -29,6 +29,9 @@ export const useMaintenanceStatus = () => {
   const checkMaintenanceStatus = async (showLoading = false) => {
     try {
       setStatus(prev => ({ ...prev, loading: showLoading, error: null }));
+      
+      // カウンセラーログイン済みかチェック
+      const isCounselor = localStorage.getItem('current_counselor') !== null;
 
       // 1. 環境変数をチェック
       const envMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
@@ -45,6 +48,7 @@ export const useMaintenanceStatus = () => {
             type: 'scheduled',
             estimatedDuration: '約30分',
             affectedFeatures: ['日記作成', '検索機能', 'データ同期'],
+            isCounselorBypass: isCounselor,
             contactInfo: 'info@namisapo.com'
           },
           loading: false,
@@ -67,6 +71,7 @@ export const useMaintenanceStatus = () => {
           if (remoteConfig.isEnabled) {
             setStatus(prev => ({
               isMaintenanceMode: true,
+              isCounselorBypass: isCounselor,
               config: remoteConfig,
               loading: false,
               error: null
@@ -86,6 +91,7 @@ export const useMaintenanceStatus = () => {
           if (parsedConfig.isEnabled) {
             setStatus(prev => ({
               isMaintenanceMode: true,
+              isCounselorBypass: isCounselor,
               config: parsedConfig,
               loading: false,
               error: null
@@ -135,12 +141,19 @@ export const useMaintenanceStatus = () => {
   // 開発・テスト用：ローカルでメンテナンスモードを設定
   const setLocalMaintenanceMode = (config: MaintenanceConfig) => {
     localStorage.setItem('maintenance_config', JSON.stringify(config));
+    
+    // カウンセラーログイン状態を保存
+    if (localStorage.getItem('current_counselor')) {
+      localStorage.setItem('counselor_during_maintenance', localStorage.getItem('current_counselor') || '');
+    }
+    
     checkMaintenanceStatus(true);
   };
 
   // 開発・テスト用：ローカルメンテナンスモードを解除
   const clearLocalMaintenanceMode = () => {
     localStorage.removeItem('maintenance_config');
+    localStorage.removeItem('counselor_during_maintenance');
     checkMaintenanceStatus(true);
   };
 
@@ -149,5 +162,6 @@ export const useMaintenanceStatus = () => {
     refreshStatus,
     setLocalMaintenanceMode,
     clearLocalMaintenanceMode
+    
   };
 };

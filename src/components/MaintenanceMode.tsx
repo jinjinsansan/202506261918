@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Clock, RefreshCw, Wrench, Heart, CheckCircle, Info } from 'lucide-react';
+import { AlertTriangle, Clock, RefreshCw, Wrench, Heart, CheckCircle, Info, Shield, LogIn } from 'lucide-react';
 
 interface MaintenanceConfig {
   isEnabled: boolean;
@@ -14,12 +14,20 @@ interface MaintenanceConfig {
 
 interface MaintenanceModeProps {
   config: MaintenanceConfig;
+  isCounselor?: boolean;
   onRetry?: () => void;
 }
 
-const MaintenanceMode: React.FC<MaintenanceModeProps> = ({ config, onRetry }) => {
+const MaintenanceMode: React.FC<MaintenanceModeProps> = ({ config, isCounselor = false, onRetry }) => {
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [showCounselorLogin, setShowCounselorLogin] = useState(false);
+  const [counselorCredentials, setCounselorCredentials] = useState({
+    email: '',
+    password: '',
+  });
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -92,6 +100,131 @@ const MaintenanceMode: React.FC<MaintenanceModeProps> = ({ config, onRetry }) =>
           accent: 'bg-blue-500'
         };
     }
+  };
+
+  // カウンセラーアカウント情報
+  const counselorAccounts = [
+    { name: '心理カウンセラー仁', email: 'jin@namisapo.com' },
+    { name: '心理カウンセラーAOI', email: 'aoi@namisapo.com' },
+    { name: '心理カウンセラーあさみ', email: 'asami@namisapo.com' },
+    { name: '心理カウンセラーSHU', email: 'shu@namisapo.com' },
+    { name: '心理カウンセラーゆーちゃ', email: 'yucha@namisapo.com' },
+    { name: '心理カウンセラーSammy', email: 'sammy@namisapo.com' }
+  ];
+
+  // カウンセラーログイン処理
+  const handleCounselorLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setLoggingIn(true);
+    
+    const { email, password } = counselorCredentials;
+    
+    // パスワードチェック
+    if (password !== 'counselor123') {
+      setLoginError('パスワードが正しくありません。');
+      setLoggingIn(false);
+      return;
+    }
+    
+    // メールアドレスチェック
+    const counselor = counselorAccounts.find(c => c.email === email);
+    if (!counselor) {
+      setLoginError('登録されていないメールアドレスです。');
+      setLoggingIn(false);
+      return;
+    }
+    
+    // ログイン成功
+    localStorage.setItem('current_counselor', counselor.name);
+    
+    // 少し待ってからリロード
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  // カウンセラーログインモーダル
+  const renderCounselorLoginModal = () => {
+    if (!showCounselorLogin) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+              <Shield className="w-8 h-8 text-purple-600" />
+            </div>
+            <h2 className="text-xl font-jp-bold text-gray-900 mb-2">
+              カウンセラーログイン
+            </h2>
+            <p className="text-gray-600 font-jp-normal text-sm">
+              メンテナンスモードをバイパスするには<br />カウンセラー認証が必要です
+            </p>
+          </div>
+
+          <form onSubmit={handleCounselorLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-jp-medium text-gray-700 mb-2">
+                メールアドレス
+              </label>
+              <input
+                type="email"
+                value={counselorCredentials.email}
+                onChange={(e) => setCounselorCredentials({...counselorCredentials, email: e.target.value})}
+                placeholder="カウンセラー用メールアドレスを入力"
+                className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-jp-normal text-gray-800 placeholder-gray-400 transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-jp-medium text-gray-700 mb-2">
+                パスワード
+              </label>
+              <input
+                type="password"
+                value={counselorCredentials.password}
+                onChange={(e) => setCounselorCredentials({...counselorCredentials, password: e.target.value})}
+                placeholder="パスワードを入力"
+                className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-jp-normal text-gray-800 placeholder-gray-400 transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                required
+              />
+            </div>
+
+            {loginError && (
+              <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                <p className="text-sm text-red-600 font-jp-normal">{loginError}</p>
+              </div>
+            )}
+
+            <div className="flex space-x-3 pt-2">
+              <button
+                type="submit"
+                disabled={loggingIn}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-jp-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 text-sm flex items-center justify-center"
+              >
+                {loggingIn ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    ログイン
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCounselorLogin(false)}
+                className="px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 font-jp-medium transition-all duration-200 hover:shadow-md text-sm"
+              >
+                キャンセル
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
   };
 
   const colors = getMaintenanceColor();
@@ -215,22 +348,34 @@ const MaintenanceMode: React.FC<MaintenanceModeProps> = ({ config, onRetry }) =>
           {/* アクションボタン */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {config.type === 'completed' ? (
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-jp-bold transition-colors shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
-              >
-                <CheckCircle className="w-5 h-5" />
-                <span>アプリを再開</span>
-              </button>
-            ) : (
               <>
                 <button
                   onClick={() => window.location.reload()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-jp-medium transition-colors shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-jp-bold transition-colors shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>状態を確認</span>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>アプリを再開</span>
                 </button>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row gap-2 w-full">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-jp-medium transition-colors shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>状態を確認</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowCounselorLogin(true)}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-jp-medium transition-colors shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>カウンセラーログイン</span>
+                  </button>
+                </div>
                 
                 {onRetry && (
                   <button
@@ -264,6 +409,9 @@ const MaintenanceMode: React.FC<MaintenanceModeProps> = ({ config, onRetry }) =>
           </div>
         </div>
       </div>
+      
+      {/* カウンセラーログインモーダル */}
+      {renderCounselorLoginModal()}
     </div>
   );
 };

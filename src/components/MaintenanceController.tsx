@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Power, PowerOff, Clock, AlertTriangle, CheckCircle, Save, RotateCcw } from 'lucide-react';
+import { Settings, Power, PowerOff, Clock, AlertTriangle, CheckCircle, Save, RotateCcw, Shield } from 'lucide-react';
 import { useMaintenanceStatus } from '../hooks/useMaintenanceStatus';
 
 const MaintenanceController: React.FC = () => {
@@ -26,7 +26,7 @@ const MaintenanceController: React.FC = () => {
   const handleEnableMaintenanceMode = () => {
     if (window.confirm('メンテナンスモードを有効にしますか？\nユーザーはアプリを使用できなくなります。')) {
       const maintenanceConfig = {
-        isEnabled: true,
+        isEnabled: true, 
         message: formData.message,
         endTime: formData.endTime || undefined,
         type: formData.type,
@@ -35,7 +35,7 @@ const MaintenanceController: React.FC = () => {
         affectedFeatures: formData.affectedFeatures,
         contactInfo: formData.contactInfo
       };
-
+      
       setLocalMaintenanceMode(maintenanceConfig);
       alert('メンテナンスモードが有効になりました。');
     }
@@ -102,8 +102,13 @@ const MaintenanceController: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <Settings className="w-8 h-8 text-blue-600" />
-          <h2 className="text-2xl font-jp-bold text-gray-900">メンテナンスモード制御</h2>
+          <div className="flex items-center space-x-3">
+            <Settings className="w-8 h-8 text-blue-600" />
+            <h2 className="text-2xl font-jp-bold text-gray-900">メンテナンスモード制御</h2>
+          </div>
+          <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-purple-200">
+            カウンセラーモード
+          </div>
         </div>
 
         {/* 現在の状態 */}
@@ -163,6 +168,21 @@ const MaintenanceController: React.FC = () => {
               )}
             </div>
           )}
+        </div>
+
+        {/* 管理者バイパス情報 */}
+        <div className="bg-purple-50 rounded-lg p-4 mb-6 border border-purple-200">
+          <div className="flex items-center space-x-3 mb-4">
+            <Shield className="w-6 h-6 text-purple-600" />
+            <h3 className="font-jp-bold text-gray-900">管理者バイパス機能</h3>
+          </div>
+          
+          <div className="space-y-2 text-sm text-purple-800">
+            <p>• メンテナンスモードが有効でも、カウンセラーはアプリにアクセスできます</p>
+            <p>• カウンセラーはメンテナンスモード中に通常の管理業務を継続できます</p>
+            <p>• メンテナンス画面からカウンセラーログインすることも可能です</p>
+            <p>• 一般ユーザーはメンテナンス画面のみ表示されます</p>
+          </div>
         </div>
 
         {/* 設定フォーム */}

@@ -59,7 +59,7 @@ const App: React.FC = () => {
   const [dataLoading, setDataLoading] = useState(true);
   const { isMaintenanceMode, config: maintenanceConfig, loading: maintenanceLoading } = useMaintenanceStatus();
   const { isConnected, currentUser, initializeUser } = useSupabase();
-  const { isAutoSyncEnabled } = useAutoSync();
+  const { isAutoSyncEnabled } = useAutoSync(); 
 
   const [formData, setFormData] = useState({
     emotion: '',
@@ -577,6 +577,21 @@ const App: React.FC = () => {
             </p>
           </div>
 
+          {/* メンテナンスモード警告（カウンセラーのみ表示） */}
+          {isMaintenanceMode && maintenanceConfig && currentCounselor && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 animate-pulse">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <div>
+                  <p className="text-sm font-jp-bold text-red-800">メンテナンスモード中</p>
+                  <p className="text-xs text-red-700">
+                    カウンセラー権限でバイパスしています。一般ユーザーはアクセスできません。
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleCounselorLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-jp-semibold text-gray-800 mb-2">
@@ -916,7 +931,7 @@ const App: React.FC = () => {
   };
 
   // メンテナンスモードのチェック
-  if (maintenanceLoading) {
+  if (maintenanceLoading) { 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -927,8 +942,18 @@ const App: React.FC = () => {
     );
   }
 
-  if (isMaintenanceMode && maintenanceConfig) {
-    return <MaintenanceMode config={maintenanceConfig} />;
+  // メンテナンスモード中でも、カウンセラーはアクセス可能
+  if (isMaintenanceMode && maintenanceConfig) { 
+    // カウンセラーログイン済みかチェック
+    const isCounselor = !!currentCounselor || localStorage.getItem('current_counselor') !== null;
+    
+    // カウンセラーでない場合はメンテナンス画面を表示
+    if (!isCounselor) {
+      return <MaintenanceMode config={maintenanceConfig} />;
+    }
+    
+    // カウンセラーの場合は通常画面を表示し、メンテナンスモードの警告を表示
+    console.log('カウンセラーによるメンテナンスモードバイパス');
   }
 
   return (
