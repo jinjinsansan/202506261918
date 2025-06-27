@@ -18,6 +18,7 @@ const DataMigration: React.FC = () => {
   const [supabaseConsentCount, setSupabaseConsentCount] = useState(0);
   const [userExists, setUserExists] = useState(false);
   const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'backup' | 'cleanup'>('auto');
+  const [creatingUser, setCreatingUser] = useState(false);
   const [stats, setStats] = useState<{
     userStats: { total: number; today: number; thisWeek: number } | null;
     diaryStats: { total: number; today: number; thisWeek: number; byEmotion: Record<string, number> } | null;
@@ -114,6 +115,40 @@ const DataMigration: React.FC = () => {
           .then(({ count }) => setSupabaseDataCount(count || 0))
           .catch(() => setSupabaseDataCount(0));
       }
+    }
+  };
+
+  // Supabaseユーザーを作成する関数
+  const handleCreateSupabaseUser = async () => {
+    const lineUsername = localStorage.getItem('line-username');
+    if (!lineUsername) {
+      alert('ユーザー名が設定されていません。');
+      return;
+    }
+
+    try {
+      setCreatingUser(true);
+      setMigrationStatus('ユーザー作成中...');
+      
+      // ユーザー作成
+      const user = await userService.createUser(lineUsername);
+      
+      if (user) {
+        setMigrationStatus('ユーザーが作成されました！データ移行が可能になりました。');
+        setUserExists(true);
+        
+        // 少し待ってからリロード
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error('ユーザー作成に失敗しました。');
+      }
+    } catch (error) {
+      console.error('ユーザー作成エラー:', error);
+      setMigrationStatus('ユーザー作成中にエラーが発生しました。');
+    } finally {
+      setCreatingUser(false);
     }
   };
 
@@ -463,7 +498,7 @@ const DataMigration: React.FC = () => {
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
               <h3 className="font-jp-semibold text-gray-900 mb-3 flex items-center space-x-2">
                 <Users className="w-5 h-5" />
-                <span>Supabaseユーザー情報</span>
+                <span>Supabaseユーザー情報</span> 
               </h3>
               
               {currentUser || userExists ? (
@@ -495,27 +530,27 @@ const DataMigration: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                    <span className="text-sm font-jp-medium text-gray-700">
+                    <span className="text-sm font-jp-bold text-red-600">
                       Supabaseユーザーが未作成
                     </span>
                   </div>
                   {isConnected && (
-                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                      <p className="text-sm text-blue-800 mb-2">
+                    <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                      <p className="text-sm text-yellow-800 mb-2">
                         Supabaseユーザーを作成すると、データをクラウドに同期できるようになります。
                       </p>
                       <button
-                        onClick={handleCreateUser}
-                        disabled={migrating}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-jp-medium text-sm transition-colors w-full"
+                        onClick={handleCreateSupabaseUser}
+                        disabled={creatingUser}
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-jp-medium text-sm transition-colors w-full"
                       >
-                        {migrating ? (
+                        {creatingUser ? (
                           <div className="flex items-center justify-center">
                             <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                             <span>作成中...</span>
                           </div>
                         ) : (
-                          'Supabaseユーザーを作成'
+                          'Supabaseユーザーを作成する'
                         )}
                       </button>
                     </div>

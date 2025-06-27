@@ -197,17 +197,17 @@ export const userService = {
   async createUser(lineUsername: string): Promise<User | null> {
     if (!supabase) return null;
 
-    console.log(`ユーザー作成開始: "${lineUsername}"`);
+    console.log(`Supabaseユーザー作成開始: "${lineUsername}"`);
     try {
       // まず既存ユーザーをチェック
       const existingUser = await this.getUserByUsername(lineUsername);
       if (existingUser) {
-        console.log('ユーザーは既に存在します:', existingUser);
+        console.log('Supabaseユーザーは既に存在します:', existingUser);
         return existingUser;
       }
       
       // 新規ユーザー作成
-      console.log(`新規ユーザーを作成します - username: "${lineUsername}"`);
+      console.log(`新規Supabaseユーザーを作成します - username: "${lineUsername}"`);
       
       const { data, error } = await supabase
         .from('users')
@@ -219,7 +219,7 @@ export const userService = {
         .maybeSingle();
       
       if (error) {
-        console.error('ユーザー作成エラー (insert):', error);
+        console.error('Supabaseユーザー作成エラー (insert):', error);
         // エラーの詳細をログ
         if (error.details) console.error('エラー詳細:', error.details);
         if (error.hint) console.error('エラーヒント:', error.hint);
@@ -227,24 +227,24 @@ export const userService = {
       }
       
       if (!data) {
-        console.error(`ユーザー作成エラー: "${lineUsername}" - データが返されませんでした`);
+        console.error(`Supabaseユーザー作成エラー: "${lineUsername}" - データが返されませんでした`);
         return null;
       }
       
-      console.log(`ユーザー作成成功: "${lineUsername}"`, data);
+      console.log(`Supabaseユーザー作成成功: "${lineUsername}"`, data);
       return data;
     } catch (error) {
-      console.error('ユーザー作成エラー:', error);
+      console.error('Supabaseユーザー作成エラー:', error);
       
       // 重複エラーの場合は既存ユーザーを返す
       if (error instanceof Error && error.message.includes('duplicate key')) {
-        console.log('重複エラーのため既存ユーザーを取得します');
+        console.log('重複エラーのため既存Supabaseユーザーを取得します');
         try {
           const existingUser = await this.getUserByUsername(lineUsername);
-          console.log('既存ユーザーを取得しました:', existingUser);
+          console.log('既存Supabaseユーザーを取得しました:', existingUser);
           return existingUser;
         } catch (getUserError) {
-          console.error('既存ユーザー取得エラー:', getUserError);
+          console.error('既存Supabaseユーザー取得エラー:', getUserError);
           return null;
         }
       }
@@ -256,7 +256,7 @@ export const userService = {
   async getUserByUsername(lineUsername: string): Promise<User | null> {
     if (!supabase) return null;
 
-    console.log(`ユーザー検索開始: "${lineUsername}"`);
+    console.log(`Supabaseユーザー検索開始: "${lineUsername}"`);
     try {
       const { data, error } = await supabase
         .from('users')
@@ -267,17 +267,17 @@ export const userService = {
       if (error) {
         // ユーザーが見つからない場合は null を返す
         if (error.code === 'PGRST116' || error.message.includes('No rows found')) {
-          console.log(`ユーザーが見つかりません: "${lineUsername}"`);
+          console.log(`Supabaseユーザーが見つかりません: "${lineUsername}"`);
           return null;
         }
-        console.error(`ユーザー検索エラー: "${lineUsername}"`, error);
+        console.error(`Supabaseユーザー検索エラー: "${lineUsername}"`, error);
         throw error;
       }
       
-      console.log(`ユーザー検索結果: "${lineUsername}"`, data ? '見つかりました' : '見つかりません');
+      console.log(`Supabaseユーザー検索結果: "${lineUsername}"`, data ? '見つかりました' : '見つかりません');
       return data || null;
     } catch (error) {
-      console.error(`ユーザー取得エラー: "${lineUsername}"`, error);
+      console.error(`Supabaseユーザー取得エラー: "${lineUsername}"`, error);
       return null;
     }
   },
