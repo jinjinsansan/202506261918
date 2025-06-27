@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw, Database, AlertTriangle, CheckCircle } from 'lucide-react';
-import { userService } from './lib/supabase';
+import { userService, supabase } from './lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 interface CreateSupabaseUserButtonProps {
   onUserCreated?: () => void;
@@ -16,7 +17,48 @@ const CreateSupabaseUserButton: React.FC<CreateSupabaseUserButtonProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleCreateUser = async () => {
+  const createUserDirectly = async (lineUsername: string) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Supabase設定が不足しています');
+    }
+    
+    // サービスロール用のクライアントを作成
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    
+    // まず既存ユーザーをチェック
+    const { data: existingUser } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('line_username', lineUsername)
+      .maybeSingle();
+      
+    if (existingUser) {
+      console.log('ユーザーは既に存在します:', existingUser);
+      return existingUser;
+    }
+    
+    // 新規ユーザー作成
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .insert([{ 
+        line_username: lineUsername,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .maybeSingle();
+      
+    if (error) {
+      console.error('直接ユーザー作成エラー:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
+  const handleCreateUser = async () => { 
     const lineUsername = localStorage.getItem('line-username');
     if (!lineUsername) {
       setError('ユーザー名が設定されていません。');
@@ -30,7 +72,20 @@ const CreateSupabaseUserButton: React.FC<CreateSupabaseUserButtonProps> = ({
       setSuccess(false);
       
       // ユーザー作成
-      const user = await userService.createUser(lineUsername);
+      let user;
+      try {
+        // まずuserServiceを使用
+        user = await userService.createUser(lineUsername);
+      } catch (serviceError) {
+        console.error('userService経由の作成に失敗、直接作成を試みます:', serviceError);
+        try {
+          // 直接作成を試みる
+          user = await createUserDirectly(lineUsername);
+        } catch (directError) {
+          console.error('直接作成にも失敗:', directError);
+          throw directError;
+        }
+      }
       
       if (user) {
         setStatus('Supabaseユーザーが作成されました！');
@@ -50,7 +105,7 @@ const CreateSupabaseUserButton: React.FC<CreateSupabaseUserButtonProps> = ({
     } catch (error) {
       console.error('Supabaseユーザー作成エラー:', error);
       
-      if (error instanceof Error) {
+      if (error instanceof Error) { 
         if (error.message.includes('duplicate key')) {
           setError('このユーザー名は既に登録されています。');
         } else {
@@ -69,6 +124,7 @@ const CreateSupabaseUserButton: React.FC<CreateSupabaseUserButtonProps> = ({
       <div className="flex items-center space-x-3 mb-4">
         <Database className="w-6 h-6 text-blue-600" />
         <h3 className="font-jp-bold text-gray-900">Supabaseユーザー作成</h3>
+        <span className="text-xs text-red-600 font-jp-bold">（直接作成）</span>
       </div>
       
       <p className="text-sm text-gray-700 mb-4">

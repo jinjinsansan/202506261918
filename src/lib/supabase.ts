@@ -5,7 +5,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // 環境変数のデバッグ情報（詳細）
 console.log('Supabase URL:', !!supabaseUrl, supabaseUrl ? `(${supabaseUrl.substring(0, 15)}...)` : 'なし');
-console.log('Supabase Key:', !!supabaseAnonKey, supabaseAnonKey ? `(長さ: ${supabaseAnonKey.length})` : 'なし');
+console.log('Supabase Key:', !!supabaseAnonKey, supabaseAnonKey ? `(長さ: ${supabaseAnonKey.length})` : 'なし'); 
+
+// サービスロールキーの取得
+const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+console.log('Supabase Service Role Key:', !!supabaseServiceRoleKey, supabaseServiceRoleKey ? `(長さ: ${supabaseServiceRoleKey.length})` : 'なし');
 
 // 環境変数の検証（本番環境対応）
 const isValidUrl = (url: string): boolean => {
@@ -197,19 +201,28 @@ export const userService = {
   async createUser(lineUsername: string): Promise<User | null> {
     if (!supabase) return null;
 
-    console.log(`Supabaseユーザー作成開始: "${lineUsername}"`);
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.error('サービスロールキーが設定されていません');
+      return null;
+    }
+
+    console.log(`Supabaseユーザー作成開始 (service_role): "${lineUsername}"`);
     try {
       // まず既存ユーザーをチェック
       const existingUser = await this.getUserByUsername(lineUsername);
       if (existingUser) {
-        console.log('Supabaseユーザーは既に存在します:', existingUser);
+        console.log('Supabaseユーザーは既に存在します (getUserByUsername):', existingUser);
         return existingUser;
       }
       
-      // 新規ユーザー作成
-      console.log(`新規Supabaseユーザーを作成します - username: "${lineUsername}"`);
+      // サービスロールを使用して新規ユーザー作成
+      console.log(`サービスロールを使用して新規ユーザーを作成します: "${lineUsername}"`);
       
-      const { data, error } = await supabase
+      // サービスロール用のクライアントを作成
+      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+      
+      const { data, error } = await supabaseAdmin
         .from('users')
         .insert([{ 
           line_username: lineUsername,
@@ -220,9 +233,8 @@ export const userService = {
       
       if (error) {
         console.error('Supabaseユーザー作成エラー (insert):', error);
-        // エラーの詳細をログ
-        if (error.details) console.error('エラー詳細:', error.details);
-        if (error.hint) console.error('エラーヒント:', error.hint);
+        console.error('エラー詳細:', error.details || 'なし');
+        console.error('エラーヒント:', error.hint || 'なし');
         throw error;
       }
       
@@ -238,11 +250,27 @@ export const userService = {
       
       // 重複エラーの場合は既存ユーザーを返す
       if (error instanceof Error && error.message.includes('duplicate key')) {
-        console.log('重複エラーのため既存Supabaseユーザーを取得します');
+        console.log('重複エラーのため既存ユーザーを再取得します');
         try {
-          const existingUser = await this.getUserByUsername(lineUsername);
-          console.log('既存Supabaseユーザーを取得しました:', existingUser);
-          return existingUser;
+          // サービスロールを使用して直接検索
+          const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+          const { data: existingUserData, error: getUserError } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('line_username', lineUsername)
+            .maybeSingle();
+            
+          if (getUserError) {
+            console.error('既存ユーザー再取得エラー:', getUserError);
+            return null;
+          }
+          
+          if (existingUserData) {
+            console.log('既存ユーザーを再取得しました:', existingUserData);
+            return existingUserData;
+          }
+          
+          return null;
         } catch (getUserError) {
           console.error('既存Supabaseユーザー取得エラー:', getUserError);
           return null;
@@ -255,10 +283,19 @@ export const userService = {
 
   async getUserByUsername(lineUsername: string): Promise<User | null> {
     if (!supabase) return null;
+    
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.error('サービスロールキーが設定されていません');
+      return null;
+    }
 
-    console.log(`Supabaseユーザー検索開始: "${lineUsername}"`);
+    console.log(`Supabaseユーザー検索開始 (service_role): "${lineUsername}"`);
     try {
-      const { data, error } = await supabase
+      // サービスロール用のクライアントを作成
+      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+      
+      const { data, error } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('line_username', lineUsername)

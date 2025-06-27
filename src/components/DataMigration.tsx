@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Database, Upload, Download, RefreshCw, CheckCircle, AlertTriangle, Users, Info, Settings, BarChart3, TrendingUp, Shield } from 'lucide-react';
 import { useSupabase } from '../hooks/useSupabase';
 import { syncService, userService, consentService, diaryService, supabase, adminService } from '../lib/supabase';
+import CreateSupabaseUserButton from '../CreateSupabaseUserButton';
 import AutoSyncSettings from './AutoSyncSettings';
 import DataBackupRecovery from './DataBackupRecovery';
-import CreateSupabaseUserButton from './CreateSupabaseUserButton';
 import DataCleanup from './DataCleanup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
@@ -131,8 +131,18 @@ const DataMigration: React.FC = () => {
       setCreatingUser(true);
       setMigrationStatus('ユーザー作成中...');
       
-      // ユーザー作成
-      const user = await userService.createUser(lineUsername);
+      // 直接ユーザー作成を試みる
+      let user;
+      try {
+        user = await userService.createUser(lineUsername);
+      } catch (error) {
+        console.error('通常の方法でのユーザー作成に失敗:', error);
+        
+        // CreateSupabaseUserButtonコンポーネントを表示して、
+        // ユーザーに直接作成ボタンをクリックしてもらう
+        setMigrationStatus('ユーザー作成に失敗しました。「Supabaseユーザーを作成する」ボタンをクリックしてください。');
+        return;
+      }
       
       if (user) {
         setMigrationStatus('ユーザーが作成されました！データ移行が可能になりました。');
@@ -531,19 +541,19 @@ const DataMigration: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                    <span className="text-sm font-jp-bold text-red-600">
+                    <span className="text-sm font-jp-bold text-red-600 mb-2">
                       Supabaseユーザーが未作成
                     </span>
                   </div>
                   {isConnected && (
-                    <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                    <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200 mb-4">
                       <p className="text-sm text-yellow-800 mb-2">
                         Supabaseユーザーを作成すると、データをクラウドに同期できるようになります。
                       </p> 
                       <button
                         onClick={handleCreateUser}
                         disabled={migrating}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-jp-medium text-sm transition-colors w-full flex items-center justify-center space-x-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-jp-medium text-sm transition-colors w-full flex items-center justify-center space-x-2 mb-2"
                       >
                         {migrating ? (
                           <div className="flex items-center justify-center">
@@ -557,6 +567,7 @@ const DataMigration: React.FC = () => {
                           </>
                         )}
                       </button>
+                      <CreateSupabaseUserButton className="mt-2" />
                     </div>
                   )}
                 </div>
