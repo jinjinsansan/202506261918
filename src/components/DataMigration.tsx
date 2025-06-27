@@ -171,7 +171,7 @@ const DataMigration: React.FC = () => {
     }
 
     setMigrating(true);
-    setMigrationStatus('ローカルデータをSupabaseに移行中...');
+    setMigrationStatus('ローカルデータをSupabaseに移行中...（しばらくお待ちください）');
     setMigrationProgress(0);
 
     try {
@@ -216,17 +216,22 @@ const DataMigration: React.FC = () => {
       }
       
       // 大量データ対応の移行処理
-      const success = await syncService.bulkMigrateLocalData(
-        userId,
-        (progress) => setMigrationProgress(progress)
-      );
-      
-      if (success) {
-        setMigrationStatus('移行が完了しました！');
-        checkDataCounts();
-        loadStats();
-      } else {
-        setMigrationStatus('移行に失敗しました。');
+      try {
+        const success = await syncService.bulkMigrateLocalData(
+          userId,
+          (progress) => setMigrationProgress(progress)
+        );
+        
+        if (success) {
+          setMigrationStatus('移行が完了しました！');
+          checkDataCounts();
+          loadStats();
+        } else {
+          setMigrationStatus('移行に失敗しました。');
+        }
+      } catch (syncError) {
+        console.error('同期エラー詳細:', syncError);
+        setMigrationStatus(`移行エラー: ${syncError instanceof Error ? syncError.message : '不明なエラー'}`);
       }
     } catch (error) {
       console.error('移行エラー:', error);
@@ -244,7 +249,7 @@ const DataMigration: React.FC = () => {
     }
 
     setMigrating(true);
-    setMigrationStatus('同意履歴をSupabaseに移行中...');
+    setMigrationStatus('同意履歴をSupabaseに移行中...（しばらくお待ちください）');
 
     try {
       const success = await syncService.syncConsentHistories();
@@ -270,7 +275,7 @@ const DataMigration: React.FC = () => {
     }
 
     setSyncing(true);
-    setMigrationStatus('Supabaseからローカルに同期中...');
+    setMigrationStatus('Supabaseからローカルに同期中...（しばらくお待ちください）');
 
     try {
       // ユーザーIDの取得
@@ -337,7 +342,7 @@ const DataMigration: React.FC = () => {
     }
 
     setSyncing(true);
-    setMigrationStatus('Supabaseから同意履歴を同期中...');
+    setMigrationStatus('Supabaseから同意履歴を同期中...（しばらくお待ちください）');
 
     try {
       const success = await syncService.syncConsentHistoriesToLocal();
@@ -698,60 +703,74 @@ const DataMigration: React.FC = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-jp-bold text-gray-900">日記データの移行</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <button
-                  onClick={handleMigrateToSupabase}
-                  disabled={migrating || !isConnected || localDataCount === 0}
-                  className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
-                >
-                  {migrating ? (
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Upload className="w-5 h-5" />
+                <div>
+                  <button
+                    onClick={handleMigrateToSupabase}
+                    disabled={migrating || !isConnected || localDataCount === 0}
+                    className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors w-full"
+                  >
+                    {migrating ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Upload className="w-5 h-5" />
+                    )}
+                    <span>日記: ローカル → Supabase</span>
+                  </button>
+                  {localDataCount === 0 && (
+                    <p className="text-xs text-red-500 mt-1">ローカルデータがありません</p>
                   )}
-                  <span>日記: ローカル → Supabase</span>
-                </button>
+                </div>
 
-                <button
-                  onClick={handleSyncFromSupabase}
-                  disabled={syncing || !isConnected}
-                  className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
-                >
-                  {syncing ? (
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Download className="w-5 h-5" />
-                  )}
-                  <span>日記: Supabase → ローカル</span>
-                </button>
+                <div>
+                  <button
+                    onClick={handleSyncFromSupabase}
+                    disabled={syncing || !isConnected}
+                    className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors w-full"
+                  >
+                    {syncing ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Download className="w-5 h-5" />
+                    )}
+                    <span>日記: Supabase → ローカル</span>
+                  </button>
+                </div>
               </div>
               
               <h3 className="text-lg font-jp-bold text-gray-900">同意履歴の移行</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={handleMigrateConsentsToSupabase}
-                  disabled={migrating || !isConnected || localConsentCount === 0}
-                  className="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
-                >
-                  {migrating ? (
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Upload className="w-5 h-5" />
+                <div>
+                  <button
+                    onClick={handleMigrateConsentsToSupabase}
+                    disabled={migrating || !isConnected || localConsentCount === 0}
+                    className="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors w-full"
+                  >
+                    {migrating ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Upload className="w-5 h-5" />
+                    )}
+                    <span>同意: ローカル → Supabase</span>
+                  </button>
+                  {localConsentCount === 0 && (
+                    <p className="text-xs text-red-500 mt-1">ローカル同意履歴がありません</p>
                   )}
-                  <span>同意: ローカル → Supabase</span>
-                </button>
+                </div>
 
-                <button
-                  onClick={handleSyncConsentsFromSupabase}
-                  disabled={syncing || !isConnected}
-                  className="flex items-center justify-center space-x-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors"
-                >
-                  {syncing ? (
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Download className="w-5 h-5" />
-                  )}
-                  <span>同意: Supabase → ローカル</span>
-                </button>
+                <div>
+                  <button
+                    onClick={handleSyncConsentsFromSupabase}
+                    disabled={syncing || !isConnected}
+                    className="flex items-center justify-center space-x-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-jp-medium transition-colors w-full"
+                  >
+                    {syncing ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Download className="w-5 h-5" />
+                    )}
+                    <span>同意: Supabase → ローカル</span>
+                  </button>
+                </div>
               </div>
 
               {/* ステータス表示 */}
@@ -759,7 +778,7 @@ const DataMigration: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center space-x-2 mb-2">
                     <RefreshCw className={`w-4 h-4 ${(migrating || syncing) ? 'animate-spin text-blue-600' : 'text-green-600'} flex-shrink-0`} />
-                    <span className="text-sm font-jp-medium text-gray-700">{migrationStatus}</span>
+                    <span className="text-sm font-jp-medium text-gray-700 break-words">{migrationStatus}</span>
                   </div>
                  
                  {/* 進捗バー */}
