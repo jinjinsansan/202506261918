@@ -524,10 +524,13 @@ const DiarySearchPage: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 px-2">
       {/* 検索ヘッダー */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-100 rounded-xl shadow-lg p-6 border border-blue-200">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-jp-bold text-blue-900">日記検索</h1>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-100 rounded-xl shadow-lg p-6 border border-blue-200"> 
+        <div className="flex items-center justify-between mb-6"> 
+          <div className="flex items-center space-x-4"> 
+            <h1 className="text-2xl font-jp-bold text-blue-900">日記検索</h1> 
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-blue-200">
+              ユーザーモード
+            </div>
             {syncing && (
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>

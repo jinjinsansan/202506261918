@@ -285,9 +285,14 @@ const DataMigration: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 px-4">
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <Database className="w-8 h-8 text-blue-600" /> 
-          <h1 className="text-2xl font-jp-bold text-gray-900">データ管理・クリーンアップ</h1>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-3">
+            <Database className="w-8 h-8 text-blue-600" /> 
+            <h1 className="text-2xl font-jp-bold text-gray-900">データ管理・クリーンアップ</h1>
+          </div>
+          <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-purple-200">
+            カウンセラーモード
+          </div>
         </div>
 
         <Tabs defaultValue="auto" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>

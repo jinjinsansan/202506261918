@@ -415,9 +415,12 @@ const DiaryPage: React.FC = () => {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6 px-2">
       {/* 今日の出来事セクション */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-jp-bold text-gray-900">今日の出来事</h2>
+      <div className="bg-white rounded-xl shadow-lg p-6"> 
+        <div className="flex justify-between items-center mb-6"> 
+          <h2 className="text-xl font-jp-bold text-gray-900">今日の出来事</h2> 
+          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-blue-200">
+            ユーザーモード
+          </div>
           <div className="relative">
             <button
               onClick={() => setShowCalendar(!showCalendar)}

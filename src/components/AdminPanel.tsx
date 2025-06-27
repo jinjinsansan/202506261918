@@ -565,7 +565,12 @@ const AdminPanel: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 px-4">
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-2xl font-jp-bold text-gray-900 mb-6">管理画面</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-jp-bold text-gray-900">管理画面</h1>
+          <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-jp-medium border border-purple-200">
+            カウンセラーモード
+          </div>
+        </div>
 
         {/* タブナビゲーション */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="mb-6">
