@@ -117,6 +117,9 @@ const UserDataManagement: React.FC = () => {
             localStorage.setItem('privacyConsentDate', backupObject.privacyConsentDate);
           }
           
+          // Mark as restored from backup
+          localStorage.setItem('restored_from_backup', 'true');
+          
           setStatus('データが正常に復元されました！ページを再読み込みしてください。');
           
           // 3秒後に自動的にページを再読み込み
@@ -259,13 +262,14 @@ const UserDataManagement: React.FC = () => {
         <div className="mt-6 bg-yellow-50 rounded-lg p-4 border border-yellow-200">
           <div className="flex items-start space-x-3">
             <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-yellow-800 font-jp-normal">
+            <div className="text-sm text-yellow-800 font-jp-normal space-y-1">
               <p className="font-jp-medium mb-2">重要な注意事項</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>バックアップファイルには個人情報が含まれています。安全に保管してください</li>
                 <li>復元操作は元に戻せません。必要に応じて現在のデータもバックアップしてください</li>
                 <li>端末を変更する場合は、必ずバックアップを作成してください</li>
                 <li>定期的なバックアップをお勧めします（週に1回程度）</li>
+                <li>新しい端末では、プライバシーポリシー画面からもバックアップを復元できます</li>
               </ul>
             </div>
           </div>
