@@ -15,10 +15,10 @@ import Support from './pages/Support';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import { useSupabase } from './hooks/useSupabase';
 import { useAutoSync } from './hooks/useAutoSync';
+import { isAuthenticated, getCurrentUser, logoutUser, logSecurityEvent } from './lib/deviceAuth';
+import UserDataManagement from './components/UserDataManagement';
 import DeviceAuthLogin from './components/DeviceAuthLogin';
 import DeviceAuthRegistration from './components/DeviceAuthRegistration';
-import { isAuthenticated, getCurrentUser, logoutUser } from './lib/deviceAuth';
-import UserDataManagement from './components/UserDataManagement';
 
 interface JournalEntry {
   id: string;
@@ -36,7 +36,7 @@ const App: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEmotion, setSelectedEmotion] = useState('');
+  const [selectedEmotion, setSelectedEmotion] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showPrivacyConsent, setShowPrivacyConsent] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -48,7 +48,7 @@ const App: React.FC = () => {
   const [showCounselorLogin, setShowCounselorLogin] = useState(false);
   const [counselorCredentials, setCounselorCredentials] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [currentCounselor, setCurrentCounselor] = useState<string | null>(null);
   const [authState, setAuthState] = useState<'none' | 'login' | 'register'>('none');
@@ -64,7 +64,7 @@ const App: React.FC = () => {
     event: '',
     realization: '',
     selfEsteemScore: 5,
-    worthlessnessScore: 5
+    worthlessnessScore: 5,
   });
 
   const emotions = [
@@ -79,6 +79,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const consentGiven = localStorage.getItem('privacyConsentGiven');
     const savedUsername = localStorage.getItem('line-username');
+    const restoredFromBackup = localStorage.getItem('restored_from_backup');
     
     if (consentGiven === 'true') {
       setShowPrivacyConsent(false);
@@ -103,6 +104,14 @@ const App: React.FC = () => {
           initializeUser(savedUsername);
         }
         setCurrentPage('how-to');
+      }
+      
+      // If restored from backup, log the event
+      if (restoredFromBackup === 'true') {
+        try {
+          logSecurityEvent('data_restored', savedUsername || 'unknown_user', 'データがバックアップから復元されました');
+          localStorage.removeItem('restored_from_backup');
+        } catch (error) {}
       }
     }
   }, [isConnected]);
@@ -145,7 +154,12 @@ const App: React.FC = () => {
   const handlePrivacyConsent = (accepted: boolean) => {
     if (accepted) {
       localStorage.setItem('privacyConsentGiven', 'true');
-      localStorage.setItem('privacyConsentDate', new Date().toISOString());
+      
+      // Only set consent date if it doesn't exist (to preserve restored date)
+      if (!localStorage.getItem('privacyConsentDate')) {
+        localStorage.setItem('privacyConsentDate', new Date().toISOString());
+      }
+      
       setShowPrivacyConsent(false);
       setAuthState('register');
     } else {

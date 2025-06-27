@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Eye, Lock, Database, AlertTriangle, Users, Clock, MessageCircle } from 'lucide-react';
+import { Shield, Eye, Lock, Database, AlertTriangle, Users, Clock, MessageCircle, Upload, RefreshCw } from 'lucide-react';
 import { logSecurityEvent } from '../lib/deviceAuth';
 
 interface PrivacyConsentProps {
@@ -8,7 +8,10 @@ interface PrivacyConsentProps {
 
 const PrivacyConsent: React.FC<PrivacyConsentProps> = ({ onConsent }) => {
   const [isChecked, setIsChecked] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [showBackupRestore, setShowBackupRestore] = useState(false);
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreStatus, setRestoreStatus] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +41,90 @@ const PrivacyConsent: React.FC<PrivacyConsentProps> = ({ onConsent }) => {
     logSecurityEvent('privacy_consent_rejected', consentRecord.line_username, 'プライバシーポリシーを拒否');
     
     onConsent(false);
+  };
+
+  // バックアップファイルの選択
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setBackupFile(e.target.files[0]);
+      setRestoreStatus(null);
+    }
+  };
+
+  // バックアップからの復元
+  const handleRestoreBackup = async () => {
+    if (!backupFile) {
+      setRestoreStatus('バックアップファイルを選択してください。');
+      return;
+    }
+    
+    setRestoring(true);
+    setRestoreStatus('復元中...');
+    
+    try {
+      // ファイルを読み込み
+      const fileReader = new FileReader();
+      
+      fileReader.onload = (event) => {
+        try {
+          if (!event.target || typeof event.target.result !== 'string') {
+            throw new Error('ファイルの読み込みに失敗しました。');
+          }
+          
+          const backupObject = JSON.parse(event.target.result);
+          
+          // バージョンチェック
+          if (!backupObject.version) {
+            throw new Error('無効なバックアップファイルです。');
+          }
+          
+          // データの復元
+          if (backupObject.journalEntries) {
+            localStorage.setItem('journalEntries', JSON.stringify(backupObject.journalEntries));
+          }
+          
+          if (backupObject.initialScores) {
+            localStorage.setItem('initialScores', JSON.stringify(backupObject.initialScores));
+          }
+          
+          if (backupObject.consentHistories) {
+            localStorage.setItem('consent_histories', JSON.stringify(backupObject.consentHistories));
+          }
+          
+          if (backupObject.lineUsername) {
+            localStorage.setItem('line-username', backupObject.lineUsername);
+          }
+          
+          if (backupObject.privacyConsentGiven) {
+            localStorage.setItem('privacyConsentGiven', backupObject.privacyConsentGiven);
+          }
+          
+          if (backupObject.privacyConsentDate) {
+            localStorage.setItem('privacyConsentDate', backupObject.privacyConsentDate);
+          }
+          
+          setRestoreStatus('データが正常に復元されました！プライバシーポリシーに同意して続行してください。');
+          
+        } catch (error) {
+          console.error('データ復元エラー:', error);
+          setRestoreStatus('データの復元に失敗しました。有効なバックアップファイルか確認してください。');
+        } finally {
+          setRestoring(false);
+        }
+      };
+      
+      fileReader.onerror = () => {
+        setRestoreStatus('ファイルの読み込みに失敗しました。');
+        setRestoring(false);
+      };
+      
+      fileReader.readAsText(backupFile);
+      
+    } catch (error) {
+      console.error('バックアップ復元エラー:', error);
+      setRestoreStatus('バックアップの復元に失敗しました。');
+      setRestoring(false);
+    }
   };
 
   return (
@@ -124,6 +211,66 @@ const PrivacyConsent: React.FC<PrivacyConsentProps> = ({ onConsent }) => {
           </div>
         </div>
 
+        {/* バックアップ復元セクション */}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowBackupRestore(!showBackupRestore)}
+            className="text-blue-600 hover:text-blue-800 font-jp-medium text-sm flex items-center space-x-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span>バックアップから復元する</span>
+          </button>
+          
+          {showBackupRestore && (
+            <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <h3 className="font-jp-bold text-gray-900 mb-3 text-sm">バックアップファイルから復元</h3>
+              <p className="text-sm text-gray-700 mb-3">
+                以前作成したバックアップファイルからデータを復元できます。
+              </p>
+              
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-jp-medium
+                      file:bg-blue-100 file:text-blue-700
+                      hover:file:bg-blue-200
+                      cursor-pointer"
+                  />
+                </div>
+                
+                <button
+                  onClick={handleRestoreBackup}
+                  disabled={restoring || !backupFile}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-jp-medium transition-colors hover:shadow-md"
+                >
+                  {restoring ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  <span>復元する</span>
+                </button>
+                
+                {restoreStatus && (
+                  <div className={`rounded-lg p-3 text-sm ${
+                    restoreStatus.includes('失敗') 
+                      ? 'bg-red-50 border border-red-200 text-red-800' 
+                      : 'bg-green-50 border border-green-200 text-green-800'
+                  }`}>
+                    {restoreStatus}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="border-t pt-6">
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-700 leading-relaxed">
@@ -139,7 +286,7 @@ const PrivacyConsent: React.FC<PrivacyConsentProps> = ({ onConsent }) => {
                 id="privacy-consent"
                 checked={isChecked}
                 onChange={(e) => setIsChecked(e.target.checked)}
-                className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
               />
               <label htmlFor="privacy-consent" className="text-sm text-gray-700 leading-relaxed">
                 上記のプライバシーポリシーの内容を理解し、個人情報の取り扱いについて同意します。
@@ -170,8 +317,11 @@ const PrivacyConsent: React.FC<PrivacyConsentProps> = ({ onConsent }) => {
         </div>
 
         <div className="mt-6 pt-6 border-t text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 mb-1">
             このアプリケーションは個人情報保護法に準拠して設計されています
+          </p>
+          <p className="text-xs text-gray-400">
+            一般社団法人NAMIDAサポート協会
           </p>
         </div>
       </div>
